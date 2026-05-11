@@ -88,20 +88,26 @@ def parse_kv_pairs(text):
 
 def run_kubectl(args):
     """运行 kubectl 命令，返回 stdout 字符串。"""
+    cmd = ["kubectl"] + args
+    cmd_str = " ".join(cmd)
     try:
         result = subprocess.run(
-            ["kubectl"] + args,
+            cmd,
             capture_output=True, text=True, timeout=30
         )
         if result.returncode != 0:
-            print(f"  [WARN] kubectl {' '.join(args)} 失败: {result.stderr.strip()}", file=sys.stderr)
+            print(f"  [WARN] 命令失败，返回码={result.returncode}", file=sys.stderr)
+            print(f"        命令: {cmd_str}", file=sys.stderr)
+            print(f"        错误: {result.stderr.strip()}", file=sys.stderr)
             return ""
         return result.stdout
     except FileNotFoundError:
-        print("  [ERROR] kubectl 未安装或不在 PATH 中", file=sys.stderr)
+        print(f"  [ERROR] kubectl 未安装或不在 PATH 中", file=sys.stderr)
+        print(f"         命令: {cmd_str}", file=sys.stderr)
         return ""
     except subprocess.TimeoutExpired:
-        print(f"  [WARN] kubectl {' '.join(args)} 超时", file=sys.stderr)
+        print(f"  [WARN] 命令超时 (30s)", file=sys.stderr)
+        print(f"        命令: {cmd_str}", file=sys.stderr)
         return ""
 
 
