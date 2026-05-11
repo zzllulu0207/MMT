@@ -43,6 +43,10 @@ CGROUP_MEMORY_ROOT = "/sys/fs/cgroup/memory"
 PROC_ROOT = "/proc"
 KUBEPODS_CGROUP = os.path.join(CGROUP_MEMORY_ROOT, "kubepods")
 
+# --- 由 main() 设置 ---
+KUBECONFIG_PATH = ""  # kubectl --kubeconfig 参数路径
+KUBECTL_BIN = "kubectl"
+
 
 # ── Helpers ──
 
@@ -88,17 +92,23 @@ def parse_kv_pairs(text):
 
 def run_kubectl(args):
     """运行 kubectl 命令，返回 stdout 字符串。"""
-    cmd = ["kubectl"] + args
+    cmd = [KUBECTL_BIN]
+    if KUBECONFIG_PATH:
+        cmd += ["--kubeconfig", KUBECONFIG_PATH]
+    cmd += args
     cmd_str = " ".join(cmd)
+
     try:
         result = subprocess.run(
             cmd,
             capture_output=True, text=True, timeout=30
         )
+        stdout_short = result.stdout.strip()[:200] if result.stdout else "(empty)"
         if result.returncode != 0:
             print(f"  [WARN] 命令失败，返回码={result.returncode}", file=sys.stderr)
             print(f"        命令: {cmd_str}", file=sys.stderr)
-            print(f"        错误: {result.stderr.strip()}", file=sys.stderr)
+            print(f"        stdout: {stdout_short}", file=sys.stderr)
+            print(f"        stderr: {result.stderr.strip()[:500]}", file=sys.stderr)
             return ""
         return result.stdout
     except FileNotFoundError:
@@ -526,12 +536,32 @@ def main():
     parser.add_argument("--inside-pod", action="store_true", help="DaemonSet/pod 内运行模式")
     parser.add_argument("--node-name", default=os.environ.get("NODE_NAME", ""),
                         help="K8s 节点名（默认读取 NODE_NAME 环境变量）")
+    parser.add_argument("--kubeconfig", default=os.environ.get("KUBECONFIG", ""),
+                        help="kubeconfig 文件路径（sudo 场景必需，默认读取 KUBECONFIG 环境变量）")
     args = parser.parse_args()
 
     if not args.node_name:
         print("[ERROR] 请通过 --node-name 指定 K8s 节点名，或设置 NODE_NAME 环境变量", file=sys.stderr)
         sys.exit(1)
     node_name = args.node_name
+
+    # --- kubectl 配置 ---
+    global KUBECONFIG_PATH, KUBECTL_BIN
+    if args.kubeconfig:
+        KUBECONFIG_PATH = args.kubeconfig
+    elif os.geteuid() == 0 and "SUDO_USER" in os.environ:
+        # sudo 场景：尝试找到原始用户的 kubeconfig
+        sudo_user = os.environ["SUDO_USER"]
+        sudo_home = os.path.expanduser(f"~{sudo_user}")
+        guessed = os.path.join(sudo_home, ".kube", "config")
+        if os.path.isfile(guessed):
+            KUBECONFIG_PATH = guessed
+            print(f"  [*] 自动检测 kubeconfig (SUDO_USER): {KUBECONFIG_PATH}")
+
+    if KUBECONFIG_PATH:
+        print(f"  [*] 使用 kubeconfig: {KUBECONFIG_PATH}")
+    else:
+        print(f"  [*] KUBECONFIG 未指定，依赖 kubectl 默认查找路径")
     tz = datetime.now(timezone(timedelta(hours=8))).astimezone().tzinfo
     collection_time = datetime.now(tz).isoformat()
 
