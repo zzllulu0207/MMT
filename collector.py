@@ -364,7 +364,8 @@ def discover_container_cgroups(pod_cgroup_path):
 
 def enrich_pods_with_k8s_metadata(pods, node_name):
     """通过 kubectl 获取 Pod 的 K8s 元数据。"""
-    print("  [*] 获取 K8s Pod 元数据 (kubectl) ...")
+    print(f"  [*] 获取 K8s Pod 元数据 (kubectl) ...")
+    print(f"      节点名: {node_name}")
 
     # 获取该节点上所有 pod 的 JSON
     kubectl_out = run_kubectl([
@@ -375,7 +376,13 @@ def enrich_pods_with_k8s_metadata(pods, node_name):
     ])
 
     if not kubectl_out:
-        print("  [WARN] 无法通过 kubectl 获取 pod 列表，元数据将不完整", file=sys.stderr)
+        print(f"  [WARN] 无法通过 kubectl 获取 pod 列表", file=sys.stderr)
+        print(f"         field-selector: spec.nodeName={node_name}", file=sys.stderr)
+        print(f"         请检查节点名是否正确，或通过 --node-name 参数手动指定", file=sys.stderr)
+        # 尝试列出所有节点名以辅助排查
+        nodes_list = run_kubectl(["get", "nodes", "-o", "jsonpath={.items[*].metadata.name}"])
+        if nodes_list.strip():
+            print(f"         集群中可用的节点名: {nodes_list.strip()}", file=sys.stderr)
         return pods
 
     try:
@@ -517,10 +524,14 @@ def main():
     parser.add_argument("--ne-type", default="Network Element", help="网元类型")
     parser.add_argument("--output", "-o", default=None, help="输出文件路径（默认: raw_<ne-id>.json）")
     parser.add_argument("--inside-pod", action="store_true", help="DaemonSet/pod 内运行模式")
-    parser.add_argument("--node-name", default=None, help="节点名（默认自动检测 hostname）")
+    parser.add_argument("--node-name", default=os.environ.get("NODE_NAME", ""),
+                        help="K8s 节点名（默认读取 NODE_NAME 环境变量）")
     args = parser.parse_args()
 
-    node_name = args.node_name or socket.gethostname()
+    if not args.node_name:
+        print("[ERROR] 请通过 --node-name 指定 K8s 节点名，或设置 NODE_NAME 环境变量", file=sys.stderr)
+        sys.exit(1)
+    node_name = args.node_name
     tz = datetime.now(timezone(timedelta(hours=8))).astimezone().tzinfo
     collection_time = datetime.now(tz).isoformat()
 
