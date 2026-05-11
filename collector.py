@@ -372,33 +372,38 @@ def discover_container_cgroups(pod_cgroup_path):
     return containers
 
 
-def enrich_pods_with_k8s_metadata(pods, node_name):
-    """通过 kubectl 获取 Pod 的 K8s 元数据。"""
-    print(f"  [*] 获取 K8s Pod 元数据 (kubectl) ...")
-    print(f"      节点名: {node_name}")
+def enrich_pods_with_k8s_metadata(pods, node_name, pods_info_file=None):
+    """获取 Pod 的 K8s 元数据（优先从外部文件读取，否则调用 kubectl）。"""
+    raw_json = ""
 
-    # 获取该节点上所有 pod 的 JSON
-    kubectl_out = run_kubectl([
-        "get", "pods",
-        "--all-namespaces",
-        "--field-selector", f"spec.nodeName={node_name}",
-        "-o", "json"
-    ])
+    if pods_info_file:
+        # ── 从外部 pods_info.json 读取 ──
+        print(f"  [*] 从外部文件读取 Pod 元数据: {pods_info_file}")
+        try:
+            with open(pods_info_file, "r", encoding="utf-8") as f:
+                raw_json = f.read()
+        except (IOError, PermissionError) as e:
+            print(f"  [ERROR] 无法读取 pods_info 文件: {e}", file=sys.stderr)
+            return pods
+    else:
+        # ── fallback: 调用 kubectl ──
+        print(f"  [*] 获取 K8s Pod 元数据 (kubectl) ...")
+        print(f"      节点名: {node_name}")
+        raw_json = run_kubectl([
+            "get", "pods",
+            "--all-namespaces",
+            "--field-selector", f"spec.nodeName={node_name}",
+            "-o", "json"
+        ])
 
-    if not kubectl_out:
-        print(f"  [WARN] 无法通过 kubectl 获取 pod 列表", file=sys.stderr)
-        print(f"         field-selector: spec.nodeName={node_name}", file=sys.stderr)
-        print(f"         请检查节点名是否正确，或通过 --node-name 参数手动指定", file=sys.stderr)
-        # 尝试列出所有节点名以辅助排查
-        nodes_list = run_kubectl(["get", "nodes", "-o", "jsonpath={.items[*].metadata.name}"])
-        if nodes_list.strip():
-            print(f"         集群中可用的节点名: {nodes_list.strip()}", file=sys.stderr)
+    if not raw_json:
+        print(f"  [WARN] 无法获取 Pod 列表，元数据将不完整", file=sys.stderr)
         return pods
 
     try:
-        k8s_pods = json.loads(kubectl_out).get("items", [])
+        k8s_pods = json.loads(raw_json).get("items", [])
     except json.JSONDecodeError:
-        print("  [WARN] kubectl 输出解析失败", file=sys.stderr)
+        print("  [WARN] Pod JSON 解析失败", file=sys.stderr)
         return pods
 
     # 构建 uid → k8s_metadata 映射
@@ -538,6 +543,8 @@ def main():
                         help="K8s 节点名（默认读取 NODE_NAME 环境变量）")
     parser.add_argument("--kubeconfig", default=os.environ.get("KUBECONFIG", ""),
                         help="kubeconfig 文件路径（sudo 场景必需，默认读取 KUBECONFIG 环境变量）")
+    parser.add_argument("--pods-info", default=None,
+                        help="外部 pods JSON 文件（替代 kubectl，直接从文件读取 pod 元数据）")
     args = parser.parse_args()
 
     if not args.node_name:
@@ -586,7 +593,7 @@ def main():
 
     # ── Step 3: Enrich with K8s metadata ──
     print("[3/5] 获取 K8s 元数据 ...")
-    pods = enrich_pods_with_k8s_metadata(pods, node_name)
+    pods = enrich_pods_with_k8s_metadata(pods, node_name, args.pods_info)
 
     # ── Step 4: Collect container & process data ──
     print("[4/5] 采集容器和进程数据 ...")
