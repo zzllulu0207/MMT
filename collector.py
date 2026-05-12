@@ -125,20 +125,35 @@ def get_local_ip():
     """获取节点主 IP。"""
     try:
         hostname = socket.gethostname()
-        return socket.gethostbyname(hostname)
-    except Exception:
-        pass
+        ip = socket.gethostbyname(hostname)
+        print(f"  [*] 节点 IP (hostname={hostname}): {ip}")
+        return ip
+    except Exception as e:
+        print(f"  [WARN] gethostbyname 失败: {e}", file=sys.stderr)
+
     # fallback: 从路由表获取
+    cmd = ["ip", "route", "get", "1.1.1.1"]
     try:
-        result = subprocess.run(
-            ["ip", "route", "get", "1.1.1.1"],
-            capture_output=True, text=True, timeout=5
-        )
-        m = re.search(r"src\s+([\d.]+)", result.stdout)
-        if m:
-            return m.group(1)
-    except Exception:
-        pass
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        cmd_str = " ".join(cmd)
+        if result.returncode != 0:
+            print(f"  [WARN] 命令失败，返回码={result.returncode}", file=sys.stderr)
+            print(f"        命令: {cmd_str}", file=sys.stderr)
+            print(f"        stderr: {result.stderr.strip()[:200]}", file=sys.stderr)
+        else:
+            m = re.search(r"src\s+([\d.]+)", result.stdout)
+            if m:
+                ip = m.group(1)
+                print(f"  [*] 节点 IP (路由表): {ip}")
+                return ip
+    except FileNotFoundError:
+        print(f"  [WARN] ip 命令不可用", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        print(f"  [WARN] ip route 命令超时", file=sys.stderr)
+    except Exception as e:
+        print(f"  [WARN] ip route 执行异常: {e}", file=sys.stderr)
+
+    print(f"  [WARN] 无法获取节点 IP，使用 'unknown'", file=sys.stderr)
     return "unknown"
 
 
