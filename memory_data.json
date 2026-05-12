@@ -1,0 +1,348 @@
+{
+  "network_elements": [
+    {
+      "id": "ne-001",
+      "name": "NE-Core-01",
+      "type": "Core Network Element",
+      "original_info": "# NE Collection Summary\ncollector: meminsight-agent v2.1.0\ncollection_time: 2026-05-10T14:30:22+08:00\ntarget: NE-Core-01 (Core Network Element)\nmethod: k8s-api + node-exporter + cAdvisor\ntotal_nodes_collected: 2\ntotal_pods_collected: 3\ncollection_duration_ms: 3420\nstatus: success\ncollector_pid: 8921\ncollector_mem_usage_bytes: 47185920",
+      "nodes": [
+        {
+          "id": "node-001",
+          "name": "worker-node-01",
+          "ip": "192.168.1.10",
+          "mem_total_kb": 65536000,
+          "mem_available_kb": 22020096,
+          "mem_used_kb": 43515904,
+          "mem_hot_kb": 28311552,
+          "mem_cold_kb": 15204352,
+          "original_info": "# /proc/meminfo (collected at 2026-05-10T14:30:22+08:00)\nMemTotal:       65536000 kB\nMemFree:        22020096 kB\nMemAvailable:   22020096 kB\nBuffers:         2097152 kB\nCached:          8388608 kB\nSwapCached:            0 kB\nActive:         28311552 kB\nInactive:       15204352 kB\nActive(anon):   18874368 kB\nInactive(anon):  9437184 kB\nActive(file):    9437184 kB\nInactive(file):  5767168 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nDirty:             98304 kB\nWriteback:             0 kB\nAnonPages:      24117248 kB\nMapped:          1048576 kB\nShmem:           2097152 kB\nKReclaimable:    4194304 kB\nSlab:            5242880 kB\nSReclaimable:    3145728 kB\nSUnreclaim:      2097152 kB\nKernelStack:       65536 kB\nPageTables:       131072 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugepagesize:       2048 kB",
+          "pods": [
+            {
+              "id": "pod-001",
+              "name": "nginx-proxy-7d4b9c",
+              "namespace": "prod",
+              "requests_memory_bytes": 134217728,
+              "limits_memory_bytes": 268435456,
+              "working_set_bytes": 198967296,
+              "rss_bytes": 183500800,
+              "active_anon_bytes": 104857600,
+              "inactive_anon_bytes": 47185920,
+              "active_file_bytes": 62914560,
+              "inactive_file_bytes": 31457280,
+              "original_info": "# /sys/fs/cgroup/memory/kubepods/burstable/pod-001/memory.stat\ncache 8388608\nrss 183500800\nrss_huge 0\nshmem 2097152\nmapped_file 4194304\ndirty 98304\nwriteback 0\nswap 0\npgpgin 1048576\npgpgout 524288\npgfault 2097152\npgmajfault 0\ninactive_anon 47185920\nactive_anon 104857600\ninactive_file 31457280\nactive_file 62914560\nunevictable 0\nhierarchical_memory_limit 268435456\nhierarchical_memsw_limit 268435456\ntotal_cache 8388608\ntotal_rss 183500800\ntotal_rss_huge 0\ntotal_shmem 2097152\ntotal_dirty 98304\ntotal_writeback 0\ntotal_swap 0\ntotal_pgpgin 1048576\ntotal_pgpgout 524288\n# limits\nlimit_in_bytes 268435456\nsoft_limit_in_bytes 9223372036854771712\nusage_in_bytes 198967296\nmax_usage_in_bytes 209715200",
+              "containers": [
+                {
+                  "id": "ctr-001",
+                  "name": "nginx",
+                  "requests_memory_bytes": 67108864,
+                  "limits_memory_bytes": 134217728,
+                  "rss_bytes": 104857600,
+                  "usage_bytes": 120259584,
+                  "active_anon_bytes": 52428800,
+                  "inactive_anon_bytes": 20971520,
+                  "active_file_bytes": 31457280,
+                  "inactive_file_bytes": 15728640,
+                  "original_info": "# /sys/fs/cgroup/memory/.../ctr-001/memory.stat\ncache 4194304\nrss 104857600\nrss_huge 0\nshmem 1048576\nmapped_file 2097152\ndirty 49152\nwriteback 0\nswap 0\npgpgin 524288\npgpgout 262144\npgfault 1048576\npgmajfault 0\ninactive_anon 20971520\nactive_anon 52428800\ninactive_file 15728640\nactive_file 31457280\nunevictable 0\nhierarchical_memory_limit 134217728\ntotal_cache 4194304\ntotal_rss 104857600\n# container_memory_working_set_bytes 120259584",
+                  "processes": [
+                    {
+                      "id": "proc-001",
+                      "pid": 1234,
+                      "name": "nginx: master",
+                      "vm_rss_kb": 51200,
+                      "vm_hwm_kb": 56320,
+                      "rss_anon_kb": 30720,
+                      "rss_file_kb": 18432,
+                      "rss_shmem_kb": 2048,
+                      "vm_pss_kb": 42496,
+                      "vm_uss_kb": 40960,
+                      "vm_swap_kb": 0,
+                      "original_info": "# /proc/1234/status\nName:   nginx\nUmask:  0022\nState:  S (sleeping)\nTgid:   1234\nNgid:   0\nPid:    1234\nPPid:   1\nTracerPid:      0\nUid:    101     101     101     101\nGid:    101     101     101     101\nFDSize: 256\nGroups: 101\nVmPeak:    61440 kB\nVmSize:    58368 kB\nVmLck:         0 kB\nVmPin:         0 kB\nVmHWM:     56320 kB\nVmRSS:     51200 kB\nRssAnon:   30720 kB\nRssFile:   18432 kB\nRssShmem:   2048 kB\nVmData:    40960 kB\nVmStk:       132 kB\nVmExe:      1024 kB\nVmLib:      4096 kB\nVmPTE:       128 kB\nVmSwap:        0 kB\nThreads:        1\nvoluntary_ctxt_switches:        15234\nnonvoluntary_ctxt_switches:     2567\n# /proc/1234/smaps_rollup (summary)\nRss:           51200 kB\nPss:           42496 kB\nShared_Clean:   2048 kB\nShared_Dirty:   1024 kB\nPrivate_Clean: 13312 kB\nPrivate_Dirty: 34816 kB\nReferenced:    51200 kB\nAnonymous:     30720 kB\nSwap:              0 kB\nSwapPss:           0 kB\nLocked:            0 kB"
+                    },
+                    {
+                      "id": "proc-002",
+                      "pid": 1235,
+                      "name": "nginx: worker",
+                      "vm_rss_kb": 26624,
+                      "vm_hwm_kb": 28672,
+                      "rss_anon_kb": 15360,
+                      "rss_file_kb": 10240,
+                      "rss_shmem_kb": 1024,
+                      "vm_pss_kb": 22528,
+                      "vm_uss_kb": 21504,
+                      "vm_swap_kb": 512,
+                      "original_info": "# /proc/1235/status\nName:   nginx\nState:  S (sleeping)\nPid:    1235\nPPid:   1234\nVmPeak:    30720 kB\nVmHWM:     28672 kB\nVmRSS:     26624 kB\nRssAnon:   15360 kB\nRssFile:   10240 kB\nRssShmem:   1024 kB\nVmSwap:      512 kB\nThreads:        1"
+                    }
+                  ]
+                },
+                {
+                  "id": "ctr-002",
+                  "name": "nginx-exporter",
+                  "requests_memory_bytes": 67108864,
+                  "limits_memory_bytes": 134217728,
+                  "rss_bytes": 78643200,
+                  "usage_bytes": 83886080,
+                  "active_anon_bytes": 52428800,
+                  "inactive_anon_bytes": 26214400,
+                  "active_file_bytes": 31457280,
+                  "inactive_file_bytes": 15728640,
+                  "original_info": "# /sys/fs/cgroup/memory/.../ctr-002/memory.stat\ncache 3145728\nrss 78643200\ninactive_anon 26214400\nactive_anon 52428800\ninactive_file 15728640\nactive_file 31457280\nhierarchical_memory_limit 134217728\ntotal_cache 3145728\ntotal_rss 78643200",
+                  "processes": [
+                    {
+                      "id": "proc-003",
+                      "pid": 2100,
+                      "name": "nginx-exporter",
+                      "vm_rss_kb": 38912,
+                      "vm_hwm_kb": 40960,
+                      "rss_anon_kb": 22528,
+                      "rss_file_kb": 14336,
+                      "rss_shmem_kb": 2048,
+                      "vm_pss_kb": 32768,
+                      "vm_uss_kb": 30720,
+                      "vm_swap_kb": 0,
+                      "original_info": "# /proc/2100/status\nName:   nginx-exporter\nState:  S (sleeping)\nPid:    2100\nVmPeak:    43008 kB\nVmHWM:     40960 kB\nVmRSS:     38912 kB\nRssAnon:   22528 kB\nRssFile:   14336 kB\nVmSwap:        0 kB"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "pod-002",
+              "name": "api-server-5c8f2d",
+              "namespace": "prod",
+              "requests_memory_bytes": 536870912,
+              "limits_memory_bytes": 1073741824,
+              "working_set_bytes": 734003200,
+              "rss_bytes": 698351616,
+              "active_anon_bytes": 419430400,
+              "inactive_anon_bytes": 157286400,
+              "active_file_bytes": 125829120,
+              "inactive_file_bytes": 62914560,
+              "original_info": "# cgroup memory.stat for pod-002\ncache 12582912\nrss 698351616\ninactive_anon 157286400\nactive_anon 419430400\ninactive_file 62914560\nactive_file 125829120\nhierarchical_memory_limit 1073741824\ntotal_rss 698351616",
+              "containers": [
+                {
+                  "id": "ctr-003",
+                  "name": "api-server",
+                  "requests_memory_bytes": 536870912,
+                  "limits_memory_bytes": 1073741824,
+                  "rss_bytes": 698351616,
+                  "usage_bytes": 734003200,
+                  "active_anon_bytes": 419430400,
+                  "inactive_anon_bytes": 157286400,
+                  "active_file_bytes": 125829120,
+                  "inactive_file_bytes": 62914560,
+                  "original_info": "# container cgroup memory.stat\ncache 12582912\nrss 698351616\ntotal_rss 698351616\nhierarchical_memory_limit 1073741824\nusage 734003200",
+                  "processes": [
+                    {
+                      "id": "proc-004",
+                      "pid": 3000,
+                      "name": "api-server",
+                      "vm_rss_kb": 342016,
+                      "vm_hwm_kb": 376832,
+                      "rss_anon_kb": 204800,
+                      "rss_file_kb": 122880,
+                      "rss_shmem_kb": 14336,
+                      "vm_pss_kb": 319488,
+                      "vm_uss_kb": 307200,
+                      "vm_swap_kb": 1024,
+                      "original_info": "# /proc/3000/status\nName:   api-server\nPid:    3000\nVmPeak:   393216 kB\nVmHWM:    376832 kB\nVmRSS:    342016 kB\nRssAnon:  204800 kB\nRssFile:  122880 kB\nVmSwap:     1024 kB\nThreads:       8"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "node-002",
+          "name": "worker-node-02",
+          "ip": "192.168.1.11",
+          "mem_total_kb": 65536000,
+          "mem_available_kb": 18350080,
+          "mem_used_kb": 47185920,
+          "mem_hot_kb": 32505856,
+          "mem_cold_kb": 14680064,
+          "original_info": "# /proc/meminfo (collected at 2026-05-10T14:30:28+08:00)\nMemTotal:       65536000 kB\nMemFree:        18350080 kB\nMemAvailable:   18350080 kB\nActive:         32505856 kB\nInactive:       14680064 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nDirty:            65536 kB",
+          "pods": [
+            {
+              "id": "pod-003",
+              "name": "redis-cache-3a9d1e",
+              "namespace": "infra",
+              "requests_memory_bytes": 268435456,
+              "limits_memory_bytes": 536870912,
+              "working_set_bytes": 419430400,
+              "rss_bytes": 402653184,
+              "active_anon_bytes": 262144000,
+              "inactive_anon_bytes": 78643200,
+              "active_file_bytes": 62914560,
+              "inactive_file_bytes": 26214400,
+              "original_info": "# cgroup memory.stat for pod-003\nrss 402653184\ninactive_anon 78643200\nactive_anon 262144000\nhierarchical_memory_limit 536870912\ntotal_rss 402653184",
+              "containers": [
+                {
+                  "id": "ctr-004",
+                  "name": "redis",
+                  "requests_memory_bytes": 268435456,
+                  "limits_memory_bytes": 536870912,
+                  "rss_bytes": 402653184,
+                  "usage_bytes": 419430400,
+                  "active_anon_bytes": 262144000,
+                  "inactive_anon_bytes": 78643200,
+                  "active_file_bytes": 62914560,
+                  "inactive_file_bytes": 26214400,
+                  "original_info": "# container cgroup memory.stat\nrss 402653184\nhierarchical_memory_limit 536870912",
+                  "processes": [
+                    {
+                      "id": "proc-005",
+                      "pid": 4000,
+                      "name": "redis-server",
+                      "vm_rss_kb": 196608,
+                      "vm_hwm_kb": 215040,
+                      "rss_anon_kb": 122880,
+                      "rss_file_kb": 61440,
+                      "rss_shmem_kb": 12288,
+                      "vm_pss_kb": 184320,
+                      "vm_uss_kb": 174080,
+                      "vm_swap_kb": 2048,
+                      "original_info": "# /proc/4000/status\nName:   redis-server\nPid:    4000\nVmPeak:   227328 kB\nVmHWM:    215040 kB\nVmRSS:    196608 kB\nRssAnon:  122880 kB\nRssFile:   61440 kB\nVmSwap:     2048 kB\nThreads:       4"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ne-002",
+      "name": "NE-Edge-02",
+      "type": "Edge Network Element",
+      "original_info": "# NE Collection Summary\ncollector: meminsight-agent v2.1.0\ncollection_time: 2026-05-10T14:31:05+08:00\ntarget: NE-Edge-02 (Edge Network Element)\nmethod: k8s-api + node-exporter\nstatus: success",
+      "nodes": [
+        {
+          "id": "node-003",
+          "name": "edge-node-01",
+          "ip": "10.0.0.50",
+          "mem_total_kb": 32768000,
+          "mem_available_kb": 12582912,
+          "mem_used_kb": 20185088,
+          "mem_hot_kb": 13631488,
+          "mem_cold_kb": 6553600,
+          "original_info": "# /proc/meminfo (collected at 2026-05-10T14:31:05+08:00)\nMemTotal:       32768000 kB\nMemFree:        12582912 kB\nMemAvailable:   12582912 kB\nActive:         13631488 kB\nInactive:        6553600 kB",
+          "pods": [
+            {
+              "id": "pod-004",
+              "name": "edge-proxy-8b2c4f",
+              "namespace": "edge",
+              "requests_memory_bytes": 67108864,
+              "limits_memory_bytes": 134217728,
+              "working_set_bytes": 104857600,
+              "rss_bytes": 96468992,
+              "active_anon_bytes": 62914560,
+              "inactive_anon_bytes": 20971520,
+              "active_file_bytes": 31457280,
+              "inactive_file_bytes": 10485760,
+              "original_info": "# cgroup memory.stat for pod-004\nrss 96468992\nhierarchical_memory_limit 134217728\ntotal_rss 96468992",
+              "containers": [
+                {
+                  "id": "ctr-005",
+                  "name": "edge-proxy",
+                  "requests_memory_bytes": 67108864,
+                  "limits_memory_bytes": 134217728,
+                  "rss_bytes": 96468992,
+                  "usage_bytes": 104857600,
+                  "active_anon_bytes": 62914560,
+                  "inactive_anon_bytes": 20971520,
+                  "active_file_bytes": 31457280,
+                  "inactive_file_bytes": 10485760,
+                  "original_info": "# container cgroup memory.stat\nrss 96468992\nhierarchical_memory_limit 134217728",
+                  "processes": [
+                    {
+                      "id": "proc-006",
+                      "pid": 5000,
+                      "name": "envoy",
+                      "vm_rss_kb": 47104,
+                      "vm_hwm_kb": 51200,
+                      "rss_anon_kb": 28672,
+                      "rss_file_kb": 16384,
+                      "rss_shmem_kb": 2048,
+                      "vm_pss_kb": 40960,
+                      "vm_uss_kb": 38912,
+                      "vm_swap_kb": 0,
+                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmHWM:     51200 kB\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB\nVmSwap:        0 kB\nThreads:       6"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ne-addtest",
+      "name": "NE-test-001",
+      "type": "Edge Network Element",
+      "original_info": "# NE Collection Summary (test instance)\ncollector: meminsight-agent v2.2.0-beta\ncollection_time: 2026-05-10T15:00:00+08:00\ntarget: NE-test-001\nmethod: k8s-api + node-exporter\nstatus: success\nnote: test deployment for validation",
+      "nodes": [
+        {
+          "id": "node-003",
+          "name": "edge-node-01",
+          "ip": "10.0.0.50",
+          "mem_total_kb": 32768000,
+          "mem_available_kb": 12582912,
+          "mem_used_kb": 20185088,
+          "mem_hot_kb": 13631488,
+          "mem_cold_kb": 6553600,
+          "original_info": "# /proc/meminfo (collected at 2026-05-10T15:00:00+08:00)\nMemTotal:       32768000 kB\nMemFree:        12582912 kB\nActive:         13631488 kB\nInactive:        6553600 kB",
+          "pods": [
+            {
+              "id": "pod-004",
+              "name": "edge-proxy-8b2c4f",
+              "namespace": "edge",
+              "requests_memory_bytes": 67108864,
+              "limits_memory_bytes": 134217728,
+              "working_set_bytes": 104857600,
+              "rss_bytes": 96468992,
+              "active_anon_bytes": 62914560,
+              "inactive_anon_bytes": 20971520,
+              "active_file_bytes": 31457280,
+              "inactive_file_bytes": 10485760,
+              "original_info": "# cgroup memory.stat for pod-004\ntotal_rss 96468992\nhierarchical_memory_limit 134217728",
+              "containers": [
+                {
+                  "id": "ctr-005",
+                  "name": "edge-proxy",
+                  "requests_memory_bytes": 67108864,
+                  "limits_memory_bytes": 134217728,
+                  "rss_bytes": 96468992,
+                  "usage_bytes": 104857600,
+                  "active_anon_bytes": 62914560,
+                  "inactive_anon_bytes": 20971520,
+                  "active_file_bytes": 31457280,
+                  "inactive_file_bytes": 10485760,
+                  "original_info": "# container cgroup memory.stat\nrss 96468992\nhierarchical_memory_limit 134217728",
+                  "processes": [
+                    {
+                      "id": "proc-006",
+                      "pid": 5000,
+                      "name": "envoy",
+                      "vm_rss_kb": 47104,
+                      "vm_hwm_kb": 51200,
+                      "rss_anon_kb": 28672,
+                      "rss_file_kb": 16384,
+                      "rss_shmem_kb": 2048,
+                      "vm_pss_kb": 40960,
+                      "vm_uss_kb": 38912,
+                      "vm_swap_kb": 0,
+                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

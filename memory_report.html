@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>内存使用统计报告</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --bg4: #30363d;
+    --border: #30363d;
+    --border2: #484f58;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --text3: #6e7681;
+    --blue: #388bfd;
+    --blue-dim: #1f6feb;
+    --blue-bg: #0d419d22;
+    --green: #3fb950;
+    --green-bg: #196c2e22;
+    --amber: #d29922;
+    --amber-bg: #9e6a0322;
+    --red: #f85149;
+    --red-bg: #da373133;
+    --purple: #bc8cff;
+    --purple-bg: #6e40c922;
+    --teal: #39d353;
+    --cyan: #39c5cf;
+    --hot: #ff6b35;
+    --cold: #4fc3f7;
+    --accent: #58a6ff;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.5;
+    min-height: 100vh;
+  }
+
+  /* ── Layout ── */
+  .app { display: flex; height: 100vh; overflow: hidden; }
+  .sidebar {
+    width: 240px; min-width: 240px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .main {
+    flex: 1; overflow-y: auto;
+    background: var(--bg);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .sidebar-logo {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--blue-dim), var(--purple));
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .sidebar-title { font-size: 13px; font-weight: 600; color: var(--text); }
+  .sidebar-sub { font-size: 11px; color: var(--text3); }
+
+  .file-loader {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .file-loader label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: var(--text2);
+    cursor: pointer;
+    padding: 6px 8px;
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius);
+    transition: all 0.15s;
+  }
+  .file-loader label:hover { border-color: var(--accent); color: var(--accent); }
+  .file-loader input { display: none; }
+  .file-status { font-size: 10px; color: var(--text3); margin-top: 4px; text-align: center; }
+
+  .nav-tree { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .nav-section { padding: 4px 16px; font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 6px;
+    padding: 5px 16px; cursor: pointer;
+    font-size: 12px; color: var(--text2);
+    transition: all 0.1s;
+    position: relative;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: var(--blue-bg); color: var(--accent); }
+  .nav-item.active::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 2px; background: var(--accent); border-radius: 0 2px 2px 0;
+  }
+  .nav-indent-1 { padding-left: 28px; }
+  .nav-indent-2 { padding-left: 40px; }
+  .nav-indent-3 { padding-left: 52px; }
+  .nav-indent-4 { padding-left: 64px; }
+  .nav-icon { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px;
+    background: var(--bg4); color: var(--text3);
+    padding: 1px 5px; border-radius: 10px;
+  }
+  .nav-expand { margin-left: auto; font-size: 10px; color: var(--text3); transition: transform 0.15s; }
+  .nav-expand.open { transform: rotate(90deg); }
+
+  .nav-toggle {
+    width: 14px; height: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 8px; color: var(--text3);
+    cursor: pointer; flex-shrink: 0;
+    transition: transform 0.15s;
+    user-select: none;
+    line-height: 1;
+  }
+  .nav-toggle:hover { color: var(--text2); }
+  .nav-children.collapsed { display: none; }
+
+  /* ── Header ── */
+  .page-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    position: sticky; top: 0; z-index: 10;
+    display: flex; align-items: flex-start; gap: 16px;
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text3); margin-bottom: 4px; flex-wrap: wrap; }
+  .breadcrumb span { color: var(--text2); }
+  .breadcrumb .sep { color: var(--text3); }
+  .page-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  .page-meta { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .header-actions { margin-left: auto; display: flex; gap: 8px; flex-shrink: 0; }
+  .btn {
+    padding: 5px 12px; border-radius: var(--radius);
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border2);
+    background: var(--bg3); color: var(--text2);
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn:hover { background: var(--bg4); color: var(--text); border-color: var(--text3); }
+  .btn-primary { background: var(--blue-dim); color: #fff; border-color: var(--blue-dim); }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+
+  /* ── Content ── */
+  .content { padding: 20px 28px 40px; }
+
+  /* ── Stat Cards ── */
+  .stat-grid { display: grid; gap: 12px; margin-bottom: 20px; }
+  .stat-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .stat-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .stat-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  .stat-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 14px 16px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+  .stat-value.mono { font-family: var(--font-mono); font-size: 18px; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .stat-bar { height: 3px; background: var(--bg4); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+  .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.6s ease; }
+  .c-blue { color: var(--blue); }
+  .c-green { color: var(--green); }
+  .c-amber { color: var(--amber); }
+  .c-red { color: var(--red); }
+  .c-purple { color: var(--purple); }
+  .c-cyan { color: var(--cyan); }
+  .dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .dot-blue { background: var(--blue); }
+  .dot-green { background: var(--green); }
+  .dot-amber { background: var(--amber); }
+  .dot-red { background: var(--red); }
+  .dot-hot { background: var(--hot); }
+  .dot-cold { background: var(--cold); }
+
+  /* ── Section ── */
+  .section { margin-bottom: 24px; }
+  .section-title {
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+  }
+  .section-title svg { flex-shrink: 0; }
+
+  /* ── Chart area ── */
+  .chart-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 16px;
+  }
+  .chart-title { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 12px; }
+  .chart-grid { display: grid; gap: 12px; }
+  .chart-grid-2 { grid-template-columns: 1fr 1fr; }
+  .chart-grid-3 { grid-template-columns: 2fr 1fr 1fr; }
+
+  /* ── Flame chart ── */
+  .flame-section { margin-bottom: 20px; }
+  .flame-container { width: 100%; overflow-x: auto; }
+  .flame-svg { display: block; }
+  .flame-row { display: flex; height: 22px; gap: 1px; margin-bottom: 1px; }
+  .flame-block {
+    height: 22px; border-radius: 2px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 500;
+    cursor: pointer; overflow: hidden; white-space: nowrap;
+    transition: opacity 0.15s; flex-shrink: 0;
+    position: relative;
+  }
+  .flame-block:hover { opacity: 0.8; outline: 1px solid rgba(255,255,255,0.3); }
+  .flame-label { padding: 0 6px; pointer-events: none; text-overflow: ellipsis; overflow: hidden; }
+  .flame-legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 11px; color: var(--text3); }
+  .flame-legend-item { display: flex; align-items: center; gap: 4px; }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table th {
+    text-align: left; padding: 7px 10px;
+    font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: middle; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg3); }
+  .data-table .num { font-family: var(--font-mono); color: var(--text); text-align: right; }
+  .data-table .name { color: var(--text); font-weight: 500; }
+
+  /* ── Progress bar ── */
+  .pct-bar { display: flex; align-items: center; gap: 8px; }
+  .pct-track { flex: 1; height: 4px; background: var(--bg4); border-radius: 2px; overflow: hidden; min-width: 60px; }
+  .pct-fill { height: 100%; border-radius: 2px; }
+  .pct-val { font-family: var(--font-mono); font-size: 11px; color: var(--text2); min-width: 36px; text-align: right; }
+
+  /* ── Tags / Badges ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600;
+  }
+  .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid #1f6feb44; }
+  .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid #3fb95044; }
+  .badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid #d2992244; }
+  .badge-red { background: var(--red-bg); color: var(--red); border: 1px solid #f8514944; }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); border: 1px solid #bc8cff44; }
+
+  /* ── SVG Flame ── */
+  .flamegraph-embed { width: 100%; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--bg2); }
+  .flamegraph-embed iframe { width: 100%; border: none; display: block; }
+  .flamegraph-placeholder {
+    height: 200px; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 8px; color: var(--text3); font-size: 12px;
+  }
+
+  /* ── Doughnut legend ── */
+  .doughnut-wrap { display: flex; align-items: center; gap: 16px; }
+  .doughnut-canvas-wrap { position: relative; width: 140px; height: 140px; flex-shrink: 0; }
+  .doughnut-center {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; pointer-events: none;
+  }
+  .doughnut-center-val { font-size: 18px; font-weight: 700; color: var(--text); }
+  .doughnut-center-lab { font-size: 10px; color: var(--text3); }
+  .doughnut-legend { flex: 1; }
+  .doughnut-legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .doughnut-legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .doughnut-legend-name { font-size: 12px; color: var(--text2); flex: 1; }
+  .doughnut-legend-val { font-size: 12px; font-family: var(--font-mono); color: var(--text); }
+  .doughnut-legend-pct { font-size: 10px; color: var(--text3); min-width: 32px; text-align: right; }
+
+  /* ── Page transitions ── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Dividers ── */
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  /* ── Info tag ── */
+  .info-row { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+  .info-row .label { color: var(--text3); min-width: 110px; }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 4px; }
+
+  /* Flamegraph canvas */
+  #flame-canvas { cursor: pointer; }
+
+  /* ── Process table ── */
+  .proc-metric { display: flex; flex-direction: column; }
+  .proc-metric-main { font-family: var(--font-mono); color: var(--text); font-size: 12px; }
+  .proc-metric-sub { font-size: 10px; color: var(--text3); }
+
+  /* ── Original info panel ── */
+  .orig-info-section { margin-top: 20px; }
+  .orig-info-title {
+    font-size: 12px; font-weight: 600; color: var(--text2);
+    margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+  }
+  .orig-info-box {
+    width: 100%; max-height: 220px; min-height: 80px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    font-family: var(--font-mono); font-size: 11px; line-height: 1.55;
+    color: var(--text3); resize: vertical; overflow: auto;
+    white-space: pre; tab-size: 2;
+  }
+  .orig-info-box:focus { outline: none; border-color: var(--border2); color: var(--text2); }
+  .orig-info-empty { font-size: 11px; color: var(--text3); font-style: italic; padding: 8px 0; }
+
+  /* ── Language switch ── */
+  .lang-switch {
+    display: inline-flex; align-items: center; gap: 2px;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .lang-btn {
+    background: none; border: 1px solid var(--border2);
+    color: var(--text3); font-size: 10px; font-weight: 500;
+    padding: 2px 6px; border-radius: 3px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .lang-btn:hover { color: var(--text); border-color: var(--text3); }
+  .lang-btn.active { background: var(--blue-dim); color: #fff; border-color: var(--blue-dim); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">M</div>
+      <div style="flex:1">
+        <div class="sidebar-title" data-i18n="app.title">MemInsight</div>
+        <div class="sidebar-sub" data-i18n="app.subtitle">内存分析工具</div>
+      </div>
+      <div class="lang-switch" id="lang-switch">
+        <button class="lang-btn active" data-lang="zh">中</button>
+        <button class="lang-btn" data-lang="en">EN</button>
+      </div>
+    </div>
+
+    <div class="file-loader">
+      <label>
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+        <span data-i18n="file.load">加载 JSON 数据</span>
+        <input type="file" id="json-file-input" accept=".json">
+      </label>
+      <div class="file-status" id="file-status" data-i18n="file.noData">未加载数据文件</div>
+    </div>
+
+    <div class="nav-tree" id="nav-tree">
+      <div class="nav-section" data-i18n="nav.views">视图</div>
+      <div class="nav-item active" data-page="ne-overview" onclick="navTo(this,'ne-overview')">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span data-i18n="nav.overview">网元总览</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- NE Overview Page -->
+    <div class="page active" id="page-ne-overview">
+      <div class="page-header">
+        <div>
+          <div class="breadcrumb"><span data-i18n="overview.breadcrumb">总览</span></div>
+          <div class="page-title" data-i18n="overview.title">网元内存总览</div>
+          <div class="page-meta" id="ne-overview-meta" data-i18n="overview.meta">加载数据后显示统计信息</div>
+        </div>
+        <div class="header-actions">
+          <button class="btn" onclick="document.getElementById('json-file-input').click()" data-i18n="file.load">加载数据</button>
+        </div>
+      </div>
+      <div class="content" id="ne-overview-content">
+        <div style="height:200px;display:flex;align-items:center;justify-content:center;color:var(--text3);flex-direction:column;gap:8px;">
+          <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" style="opacity:0.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <div style="font-size:13px;" data-i18n="file.loadPrompt">请加载 JSON 数据文件</div>
+          <div style="font-size:11px;" data-i18n="file.loadHint">点击侧边栏"加载 JSON 数据"按钮</div>
+          <button class="btn btn-primary" onclick="document.getElementById('json-file-input').click()" style="margin-top:8px;" data-i18n="file.select">选择文件</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Node Page -->
+    <div class="page" id="page-node"></div>
+    <!-- Pod Page -->
+    <div class="page" id="page-pod"></div>
+    <!-- Container Page -->
+    <div class="page" id="page-container"></div>
+    <!-- Process Page -->
+    <div class="page" id="page-process"></div>
+  </div>
+</div>
+
+<script>
+// ── i18n ──
+var currentLang = localStorage.getItem('meminsight-lang') || 'zh';
+var i18nStrings = {
+  zh: {
+    'app.title': 'MemInsight', 'app.subtitle': '内存分析工具',
+    'file.load': '加载 JSON 数据', 'file.noData': '未加载数据文件',
+    'file.loadPrompt': '请加载 JSON 数据文件', 'file.loadHint': '点击侧边栏"加载 JSON 数据"按钮',
+    'file.select': '选择文件', 'file.autoLoaded': 'memory_data.json (自动加载)',
+    'file.notLoaded': '（请手动选择，或通过本地服务器打开页面）', 'file.parseError': 'JSON 解析失败: ',
+    'file.svgAuto': 'memory_flame.svg (自动加载)', 'file.svgSelect': '选择 SVG 文件',
+    'file.svgNone': '未选择文件', 'file.svgPrompt': '点击"选择 SVG 文件"加载系统火焰图',
+    'file.svgHint': '支持由 FlameGraph 工具生成的 .svg 文件',
+    'file.loadExternalSVG': '加载外部 flamegraph.svg 文件：',
+    'nav.views': '视图', 'nav.overview': '网元总览', 'nav.neSection': '网元 / 节点',
+    'overview.title': '网元内存总览', 'overview.breadcrumb': '总览',
+    'overview.meta': '加载数据后显示统计信息',
+    'stat.nodes': '节点总数', 'stat.totalMem': '总物理内存', 'stat.usedMem': '已使用内存',
+    'stat.freeMem': '空闲内存', 'stat.acrossNodes': '跨所有节点', 'stat.available': '可用',
+    'stat.hotCold': '冷热比', 'stat.hotColdRatio': '热 / 冷', 'stat.coldHot': '冷热内存',
+    'stat.memUsage': '内存使用率', 'stat.totalQuota': 'Pod 总配额',
+    'stat.availMem': '可用内存', 'stat.memAvail': 'MemAvailable',
+    'stat.hotOfTotal': '{pct}% of total',
+    'stat.activeAnonCache': '活跃匿名+活跃缓存', 'stat.inactiveAnonCache': '非活跃匿名+非活跃缓存',
+    'flame.title': '内存火焰图（层级结构）',
+    'flame.subtitle': '网元 → 节点 → POD → 容器 → 进程 内存占用火焰图',
+    'flame.l0': 'L0 网元', 'flame.l1': 'L1 节点', 'flame.l2': 'L2 POD',
+    'flame.l3': 'L3 容器', 'flame.l4': 'L4 进程',
+    'chart.neBar': '各网元内存使用', 'chart.hotCold': '全局冷热内存比例',
+    'chart.nodeBar': '节点内存使用对比', 'chart.nodeHC': '冷热内存比例',
+    'chart.hotColdPie': '冷热内存占比', 'chart.memClass': '内存分类明细',
+    'chart.memCompare': '内存指标对比', 'chart.memDist': '指标详细分布（按比例）',
+    'mem.hot': '热内存', 'mem.cold': '冷内存',
+    'table.neList': '网元列表', 'table.neName': '网元名称', 'table.type': '类型',
+    'table.nodeCount': '节点数', 'table.total': '总内存', 'table.used': '已用',
+    'table.free': '空闲', 'table.usage': '使用率',
+    'table.nodeList': '节点列表（点击查看详情）', 'table.nodeName': '节点名称',
+    'table.ip': 'IP', 'table.avail': '可用',
+    'table.podList': 'POD 列表（点击查看详情）', 'table.podName': 'POD 名称',
+    'table.namespace': '命名空间', 'table.ws': '工作集(WS)', 'table.rss': 'RSS',
+    'table.limits': 'Limits',
+    'table.ctrList': '容器列表（点击查看详情）', 'table.ctrName': '容器名称',
+    'table.requests': 'Requests', 'table.usageBytes': '使用量',
+    'table.procList': '进程列表（点击查看详情）', 'table.pid': 'PID',
+    'table.procName': '进程名', 'table.vmRss': 'VmRSS', 'table.vmHwm': 'VmHWM',
+    'table.vmPss': 'VmPSS', 'table.vmSwap': 'VmSwap',
+    'section.staticQuota': '静态资源配额', 'section.realtimeUsage': '实时运行占用',
+    'section.coldHot': '冷热内存', 'section.quotaLimit': '配额限制',
+    'section.realtimeMetrics': '实时占用指标', 'section.ctrColdHot': '容器冷热内存',
+    'section.procMetrics': '进程内存指标',
+    'section.svgFlame': '系统内存火焰图 SVG（外部文件）',
+    'origInfo.title': '原始采集信息 (original_info)',
+    'label.requests': '内存 Requests', 'label.limits': '内存 Limits', 'label.totalQuota': 'Pod 总配额',
+    'label.ws': '工作集 (Working Set)', 'label.rss': '物理常驻 RSS',
+    'label.wsKubectl': '同 kubectl top', 'label.rssDesc': 'Resident Set Size',
+    'label.liveOverLimit': '实时 / Limits', 'label.allContainers': '所有容器合计',
+    'label.rssPhysical': 'RSS 物理常驻', 'label.totalUsage': '总内存使用',
+    'desc.activeAnonCache': '活跃匿名+活跃缓存', 'desc.inactiveAnonCache': '非活跃匿名+非活跃缓存',
+    'desc.vmRss': '进程当前物理内存占用', 'desc.vmHwm': '进程内存峰值 (High Water Mark)',
+    'desc.rssAnon': '进程私有匿名内存', 'desc.rssFile': '进程文件映射内存',
+    'desc.rssShmem': '共享内存开销', 'desc.vmPss': '均分共享后精准内存 (Proportional)',
+    'desc.vmUss': '进程纯私有内存 (Unique)', 'desc.vmSwap': '进程交换分区使用',
+    'units.nodes': '{n} 个节点', 'units.pods': '{n} 个 POD', 'units.containers': '{n} 个容器',
+    'units.processes': '{n} 个进程', 'units.neCount': '{ne} 个网元',
+    'units.neMeta': '{ne} 个网元 · {nodes} 个节点 · 总内存 {mem}',
+    'units.neTypeMeta': '{type} · {n} 个节点',
+    'units.podMeta': '命名空间: {ns} · {n} 个容器',
+    'units.ctrMeta': '容器 · {n} 个进程',
+    'units.procMeta': 'PID: {pid} · 容器: {ctr}',
+    'breadcrumb.overview': '总览', 'badge.ne': '网元'
+  },
+  en: {
+    'app.title': 'MemInsight', 'app.subtitle': 'Memory Analysis Tool',
+    'file.load': 'Load JSON Data', 'file.noData': 'No data file loaded',
+    'file.loadPrompt': 'Please load a JSON data file',
+    'file.loadHint': 'Click "Load JSON Data" in the sidebar',
+    'file.select': 'Select File', 'file.autoLoaded': 'memory_data.json (auto-loaded)',
+    'file.notLoaded': '(Please load manually, or open via local server)',
+    'file.parseError': 'JSON parse error: ',
+    'file.svgAuto': 'memory_flame.svg (auto-loaded)', 'file.svgSelect': 'Select SVG File',
+    'file.svgNone': 'No file selected', 'file.svgPrompt': 'Click "Select SVG File" to load flame graph',
+    'file.svgHint': 'Supports .svg files generated by FlameGraph tool',
+    'file.loadExternalSVG': 'Load external flamegraph.svg file:',
+    'nav.views': 'Views', 'nav.overview': 'NE Overview', 'nav.neSection': 'Network Elements / Nodes',
+    'overview.title': 'NE Memory Overview', 'overview.breadcrumb': 'Overview',
+    'overview.meta': 'Load data to display statistics',
+    'stat.nodes': 'Total Nodes', 'stat.totalMem': 'Total Physical Memory',
+    'stat.usedMem': 'Used Memory', 'stat.freeMem': 'Free Memory',
+    'stat.acrossNodes': 'Across all nodes', 'stat.available': 'Available',
+    'stat.hotCold': 'Hot/Cold Ratio', 'stat.hotColdRatio': 'Hot / Cold', 'stat.coldHot': 'Hot & Cold Memory',
+    'stat.memUsage': 'Memory Usage', 'stat.totalQuota': 'Pod Total Quota',
+    'stat.availMem': 'Available Memory', 'stat.memAvail': 'MemAvailable',
+    'stat.hotOfTotal': '{pct}% of total',
+    'stat.activeAnonCache': 'Active Anon + Active File',
+    'stat.inactiveAnonCache': 'Inactive Anon + Inactive File',
+    'flame.title': 'Memory Flame Graph (Hierarchy)',
+    'flame.subtitle': 'NE → Node → POD → Container → Process Memory Flame',
+    'flame.l0': 'L0 NE', 'flame.l1': 'L1 Node', 'flame.l2': 'L2 POD',
+    'flame.l3': 'L3 Container', 'flame.l4': 'L4 Process',
+    'chart.neBar': 'Memory Usage by NE', 'chart.hotCold': 'Global Hot/Cold Ratio',
+    'chart.nodeBar': 'Node Memory Comparison', 'chart.nodeHC': 'Hot/Cold Ratio',
+    'chart.hotColdPie': 'Hot/Cold Ratio', 'chart.memClass': 'Memory Breakdown',
+    'chart.memCompare': 'Memory Metrics Comparison', 'chart.memDist': 'Metric Distribution (Proportional)',
+    'mem.hot': 'Hot Memory', 'mem.cold': 'Cold Memory',
+    'table.neList': 'NE List', 'table.neName': 'NE Name', 'table.type': 'Type',
+    'table.nodeCount': 'Nodes', 'table.total': 'Total', 'table.used': 'Used',
+    'table.free': 'Free', 'table.usage': 'Usage',
+    'table.nodeList': 'Node List (click for details)', 'table.nodeName': 'Node Name',
+    'table.ip': 'IP', 'table.avail': 'Avail',
+    'table.podList': 'POD List (click for details)', 'table.podName': 'POD Name',
+    'table.namespace': 'Namespace', 'table.ws': 'Working Set', 'table.rss': 'RSS',
+    'table.limits': 'Limits',
+    'table.ctrList': 'Container List (click for details)', 'table.ctrName': 'Container Name',
+    'table.requests': 'Requests', 'table.usageBytes': 'Usage',
+    'table.procList': 'Process List (click for details)', 'table.pid': 'PID',
+    'table.procName': 'Process Name', 'table.vmRss': 'VmRSS', 'table.vmHwm': 'VmHWM',
+    'table.vmPss': 'VmPSS', 'table.vmSwap': 'VmSwap',
+    'section.staticQuota': 'Static Resource Quota', 'section.realtimeUsage': 'Real-time Usage',
+    'section.coldHot': 'Hot & Cold Memory', 'section.quotaLimit': 'Quota Limits',
+    'section.realtimeMetrics': 'Real-time Metrics', 'section.ctrColdHot': 'Container Hot & Cold Memory',
+    'section.procMetrics': 'Process Memory Metrics',
+    'section.svgFlame': 'System Memory Flame Graph SVG (External File)',
+    'origInfo.title': 'Raw Collection Info (original_info)',
+    'label.requests': 'Memory Requests', 'label.limits': 'Memory Limits',
+    'label.totalQuota': 'Pod Total Quota',
+    'label.ws': 'Working Set', 'label.rss': 'Physical RSS',
+    'label.wsKubectl': 'Same as kubectl top', 'label.rssDesc': 'Resident Set Size',
+    'label.liveOverLimit': 'Live / Limits', 'label.allContainers': 'All containers combined',
+    'label.rssPhysical': 'RSS (Physical Resident)', 'label.totalUsage': 'Total Usage',
+    'desc.activeAnonCache': 'Active Anon + Active File', 'desc.inactiveAnonCache': 'Inactive Anon + Inactive File',
+    'desc.vmRss': 'Current physical memory usage', 'desc.vmHwm': 'Peak memory usage (High Water Mark)',
+    'desc.rssAnon': 'Private anonymous memory', 'desc.rssFile': 'File-mapped memory',
+    'desc.rssShmem': 'Shared memory overhead', 'desc.vmPss': 'Proportional Set Size',
+    'desc.vmUss': 'Unique Set Size (private only)', 'desc.vmSwap': 'Swap usage',
+    'units.nodes': '{n} nodes', 'units.pods': '{n} PODs', 'units.containers': '{n} containers',
+    'units.processes': '{n} processes', 'units.neCount': '{ne} NEs',
+    'units.neMeta': '{ne} NEs · {nodes} nodes · Total {mem}',
+    'units.neTypeMeta': '{type} · {n} nodes',
+    'units.podMeta': 'Namespace: {ns} · {n} containers',
+    'units.ctrMeta': 'Container · {n} processes',
+    'units.procMeta': 'PID: {pid} · Container: {ctr}',
+    'breadcrumb.overview': 'Overview', 'badge.ne': 'NE'
+  }
+};
+
+function t(key, params) {
+  var str = (i18nStrings[currentLang] && i18nStrings[currentLang][key]) || key;
+  if (params) {
+    Object.keys(params).forEach(function(k) {
+      str = str.replace('{' + k + '}', params[k]);
+    });
+  }
+  return str;
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  localStorage.setItem('meminsight-lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.lang === lang);
+  });
+  applyI18n();
+  if (appData) {
+    buildNavTree();
+    renderNEOverview();
+    navTo(document.querySelector('.nav-item'), 'ne-overview');
+    setTimeout(autoLoadSVG, 100);
+  }
+}
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+    var key = el.dataset.i18n;
+    var text = t(key);
+    if (text !== key) el.textContent = text;
+  });
+}
+
+// Language switch buttons
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.lang-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.lang === currentLang);
+    btn.addEventListener('click', function() {
+      if (this.dataset.lang !== currentLang) setLang(this.dataset.lang);
+    });
+  });
+  applyI18n();
+});
+
+// ── Auto-load data files on page load ──
+(async function autoLoad() {
+  const statusEl = document.getElementById('file-status');
+  try {
+    const resp = await fetch('./memory_data.json');
+    if (!resp.ok) throw new Error('Not found');
+    appData = await resp.json();
+    statusEl.textContent = t('file.autoLoaded');
+    buildNavTree();
+    renderNEOverview();
+    navTo(document.querySelector('.nav-item'), 'ne-overview');
+    setTimeout(autoLoadSVG, 100);
+  } catch(e) {
+    statusEl.textContent = t('file.notLoaded');
+  }
+})();
+
+async function autoLoadSVG() {
+  try {
+    const resp = await fetch('./memory_flame.svg');
+    if (!resp.ok) return;
+    const svgText = await resp.text();
+    const area = document.getElementById('flamegraph-embed-area');
+    if (area) {
+      area.innerHTML = '<div style="width:100%;overflow:auto;max-height:500px;border-radius:4px;">' + svgText + '</div>';
+      area.style.minHeight = 'auto';
+    }
+    const nameEl = document.getElementById('svg-file-name');
+    if (nameEl) nameEl.textContent = t('file.svgAuto');
+  } catch(e) {}
+}
+
+// ── Original info renderer ──
+function renderOrigInfo(data) {
+  if (!data || !data.original_info) return '';
+  return `
+    <div class="orig-info-section">
+      <div class="orig-info-title">
+        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        ${t('origInfo.title')}
+      </div>
+      <textarea class="orig-info-box" readonly spellcheck="false" wrap="off">${data.original_info}</textarea>
+    </div>`;
+}
+
+// ── Global state ──
+let appData = null;
+let chartInstances = {};
+
+// ── Utils ──
+function fmt(bytes) {
+  if (bytes === null || bytes === undefined) return '—';
+  if (bytes >= 1073741824) return (bytes/1073741824).toFixed(1) + ' GB';
+  if (bytes >= 1048576) return (bytes/1048576).toFixed(1) + ' MB';
+  if (bytes >= 1024) return (bytes/1024).toFixed(0) + ' KB';
+  return bytes + ' B';
+}
+function fmtKB(kb) { return fmt(kb * 1024); }
+function pct(a, b) { return b > 0 ? Math.round(a / b * 100) : 0; }
+function pctStr(a, b) { return pct(a, b) + '%'; }
+function pctColor(p) {
+  if (p < 50) return '#3fb950';
+  if (p < 75) return '#d29922';
+  return '#f85149';
+}
+function barColor(p) {
+  if (p < 50) return 'var(--green)';
+  if (p < 80) return 'var(--amber)';
+  return 'var(--red)';
+}
+function sum(arr, fn) { return arr.reduce((acc, x) => acc + (fn ? fn(x) : x), 0); }
+function destroyChart(id) {
+  if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
+}
+
+// ── File input ──
+document.getElementById('json-file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      appData = JSON.parse(ev.target.result);
+      document.getElementById('file-status').textContent = file.name;
+      buildNavTree();
+      renderNEOverview();
+      navTo(document.querySelector('.nav-item'), 'ne-overview');
+      setTimeout(autoLoadSVG, 100);
+    } catch(err) {
+      alert(t('file.parseError') + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+
+// ── Navigation ──
+function navTo(el, pageId) {
+  document.querySelectorAll('.nav-item').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  const p = document.getElementById('page-' + pageId);
+  if (p) p.classList.add('active');
+}
+
+// ── Build nav tree ──
+function buildNavTree() {
+  if (!appData) return;
+  const tree = document.getElementById('nav-tree');
+  tree.innerHTML = '';
+
+  const viewSection = document.createElement('div');
+  viewSection.className = 'nav-section';
+  viewSection.textContent = t('nav.views');
+  tree.appendChild(viewSection);
+
+  addNavItem(tree, 'ne-overview', 'ne-overview', t('nav.overview'), null, 0,
+    '<svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
+    null, false
+  );
+
+  const neSection = document.createElement('div');
+  neSection.className = 'nav-section';
+  neSection.textContent = t('nav.neSection');
+  tree.appendChild(neSection);
+
+  appData.network_elements.forEach(ne => {
+    const neResult = addNavItem(tree, 'ne-'+ne.id, 'node', '🗄 ' + ne.name, ne, 1, null, () => renderNodePage(ne), true);
+
+    ne.nodes.forEach(node => {
+      const nodeResult = addNavItem(neResult.childrenEl, 'node-'+node.id, 'node', '⬡ ' + node.name, node, 2, null, () => renderNodeDetail(ne, node), true);
+
+      node.pods.forEach(pod => {
+        const podResult = addNavItem(nodeResult.childrenEl, 'pod-'+pod.id, 'pod', '◈ ' + pod.name.substring(0, 18), pod, 3, null, () => renderPodPage(ne, node, pod), true);
+
+        pod.containers.forEach(ctr => {
+          const ctrResult = addNavItem(podResult.childrenEl, 'ctr-'+ctr.id, 'container', '▣ ' + ctr.name, ctr, 4, null, () => renderContainerPage(ne, node, pod, ctr), true);
+
+          ctr.processes.forEach(proc => {
+            addNavItem(ctrResult.childrenEl, 'proc-'+proc.id, 'process', '⬤ ' + proc.name, proc, 5, null, () => renderProcessPage(ne, node, pod, ctr, proc), false);
+          });
+        });
+      });
+    });
+  });
+}
+
+function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn, hasChildren) {
+  var el = document.createElement('div');
+  el.className = 'nav-item' + (depth > 0 ? ' nav-indent-' + Math.min(depth, 4) : '');
+  el.id = 'nav-' + id;
+  el.dataset.page = pageKey;
+
+  var html = '';
+  if (hasChildren) {
+    html += '<span class="nav-toggle collapsed">▶</span>';
+  }
+  if (iconHtml) {
+    html += iconHtml;
+  }
+  html += '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:' + (12-Math.min(depth,2)) + 'px">' + label + '</span>';
+  el.innerHTML = html;
+
+  var toggle = el.querySelector('.nav-toggle');
+  if (toggle) {
+    toggle.addEventListener('click', function(e) {
+      e.stopPropagation();
+      var children = el.nextElementSibling;
+      if (children && children.classList.contains('nav-children')) {
+        children.classList.toggle('collapsed');
+        toggle.classList.toggle('collapsed');
+        toggle.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
+      }
+    });
+  }
+
+  el.addEventListener('click', function() {
+    navTo(el, pageKey);
+    if (renderFn) renderFn();
+  });
+
+  parent.appendChild(el);
+
+  var childrenEl = null;
+  if (hasChildren) {
+    childrenEl = document.createElement('div');
+    childrenEl.className = 'nav-children';
+    parent.appendChild(childrenEl);
+  }
+
+  return { itemEl: el, childrenEl: childrenEl };
+}
+
+// ── NE Overview ──
+function renderNEOverview() {
+  if (!appData) return;
+  const nes = appData.network_elements;
+  const allNodes = nes.flatMap(ne => ne.nodes);
+  const totalMem = sum(allNodes, n => n.mem_total_kb) * 1024;
+  const usedMem = sum(allNodes, n => n.mem_used_kb) * 1024;
+  const freeMem = totalMem - usedMem;
+  const hotMem = sum(allNodes, n => n.mem_hot_kb) * 1024;
+  const coldMem = sum(allNodes, n => n.mem_cold_kb) * 1024;
+  const usePct = pct(usedMem, totalMem);
+
+  document.getElementById('ne-overview-meta').textContent =
+    t('units.neMeta', {ne: nes.length, nodes: allNodes.length, mem: fmt(totalMem)});
+
+  const content = document.getElementById('ne-overview-content');
+  content.innerHTML = `
+    <!-- Summary cards -->
+    <div class="stat-grid stat-grid-4">
+      <div class="stat-card">
+        <div class="stat-label"><span class="dot dot-blue"></span>${t('stat.nodes')}</div>
+        <div class="stat-value c-blue">${allNodes.length}</div>
+        <div class="stat-sub">${t('units.neCount', {ne: nes.length})}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="dot dot-green"></span>${t('stat.totalMem')}</div>
+        <div class="stat-value">${fmt(totalMem)}</div>
+        <div class="stat-sub">${t('stat.acrossNodes')}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="dot dot-amber"></span>${t('stat.usedMem')}</div>
+        <div class="stat-value c-amber">${fmt(usedMem)}</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width:${usePct}%;background:${barColor(usePct)}"></div></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label"><span class="dot dot-green"></span>${t('stat.freeMem')}</div>
+        <div class="stat-value c-green">${fmt(freeMem)}</div>
+        <div class="stat-sub">${pctStr(freeMem, totalMem)} ${t('stat.available')}</div>
+      </div>
+    </div>
+
+    <!-- Flame chart section -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+        ${t('flame.title')}
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">${t('flame.subtitle')}</div>
+        <canvas id="flame-canvas" height="240" style="width:100%;cursor:pointer;"></canvas>
+        <div class="flame-legend" id="flame-legend"></div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
+      <div class="chart-card">
+        <div class="chart-title">${t('chart.neBar')}</div>
+        <div style="position:relative;height:220px;"><canvas id="ne-bar-chart" role="img" aria-label="${t('chart.neBar')}"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">${t('chart.hotCold')}</div>
+        <div class="doughnut-wrap">
+          <div class="doughnut-canvas-wrap">
+            <canvas id="ne-hot-cold-chart" role="img" aria-label="${t('chart.hotCold')}"></canvas>
+            <div class="doughnut-center">
+              <div class="doughnut-center-val">${pctStr(hotMem, hotMem+coldMem)}</div>
+              <div class="doughnut-center-lab">${t('mem.hot')}</div>
+            </div>
+          </div>
+          <div class="doughnut-legend">
+            <div class="doughnut-legend-row">
+              <div class="doughnut-legend-dot" style="background:#ff6b35"></div>
+              <div class="doughnut-legend-name">${t('mem.hot')}</div>
+              <div class="doughnut-legend-val">${fmt(hotMem)}</div>
+              <div class="doughnut-legend-pct">${pctStr(hotMem, hotMem+coldMem)}</div>
+            </div>
+            <div class="doughnut-legend-row">
+              <div class="doughnut-legend-dot" style="background:#4fc3f7"></div>
+              <div class="doughnut-legend-name">${t('mem.cold')}</div>
+              <div class="doughnut-legend-val">${fmt(coldMem)}</div>
+              <div class="doughnut-legend-pct">${pctStr(coldMem, hotMem+coldMem)}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- NE table -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+        ${t('table.neList')}
+      </div>
+      <div class="chart-card" style="padding:0;">
+        <table class="data-table">
+          <thead><tr>
+            <th>${t('table.neName')}</th><th>${t('table.type')}</th><th>${t('table.nodeCount')}</th>
+            <th style="text-align:right">${t('table.total')}</th><th style="text-align:right">${t('table.used')}</th>
+            <th style="text-align:right">${t('table.free')}</th><th style="text-align:right;min-width:130px">${t('table.usage')}</th>
+          </tr></thead>
+          <tbody id="ne-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SVG flamegraph loader -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        ${t('section.svgFlame')}
+      </div>
+      <div class="chart-card">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <div style="font-size:12px;color:var(--text2);">${t('file.loadExternalSVG')}</div>
+          <label>
+            <input type="file" id="svg-file-input" accept=".svg" style="display:none">
+            <button class="btn" onclick="document.getElementById('svg-file-input').click()" type="button">${t('file.svgSelect')}</button>
+          </label>
+          <span id="svg-file-name" style="font-size:11px;color:var(--text3);">${t('file.svgNone')}</span>
+        </div>
+        <div id="flamegraph-embed-area" class="flamegraph-placeholder">
+          <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" style="opacity:0.3"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+          <div>${t('file.svgPrompt')}</div>
+          <div style="font-size:10px;">${t('file.svgHint')}</div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // SVG file loader
+  document.getElementById('svg-file-input').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('svg-file-name').textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const area = document.getElementById('flamegraph-embed-area');
+      area.innerHTML = `<div style="width:100%;overflow:auto;max-height:500px;border-radius:4px;">${ev.target.result}</div>`;
+      area.style.minHeight = 'auto';
+    };
+    reader.readAsText(file);
+  });
+
+  // Fill NE table
+  const tbody = document.getElementById('ne-table-body');
+  nes.forEach(ne => {
+    const nodes = ne.nodes;
+    const neTot = sum(nodes, n => n.mem_total_kb) * 1024;
+    const neUsed = sum(nodes, n => n.mem_used_kb) * 1024;
+    const neFree = neTot - neUsed;
+    const neUse = pct(neUsed, neTot);
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => { renderNodePage(ne); document.getElementById('nav-ne-'+ne.id)?.click(); };
+    tr.innerHTML = `
+      <td class="name" style="display:flex;align-items:center;gap:6px">
+        <span class="badge badge-blue">${ne.id}</span>${ne.name}
+      </td>
+      <td><span class="badge badge-purple">${ne.type}</span></td>
+      <td class="num">${nodes.length}</td>
+      <td class="num">${fmt(neTot)}</td>
+      <td class="num">${fmt(neUsed)}</td>
+      <td class="num" style="color:var(--green)">${fmt(neFree)}</td>
+      <td>
+        <div class="pct-bar">
+          <div class="pct-track"><div class="pct-fill" style="width:${neUse}%;background:${barColor(neUse)}"></div></div>
+          <div class="pct-val" style="color:${barColor(neUse)}">${neUse}%</div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Bar chart
+  destroyChart('ne-bar-chart');
+  const barCtx = document.getElementById('ne-bar-chart').getContext('2d');
+  chartInstances['ne-bar-chart'] = new Chart(barCtx, {
+    type: 'bar',
+    data: {
+      labels: nes.map(ne => ne.name),
+      datasets: [
+        { label: t('table.used'), data: nes.map(ne => sum(ne.nodes, n => n.mem_used_kb) / 1024 / 1024), backgroundColor: '#388bfd88', borderColor: '#388bfd', borderWidth: 1 },
+        { label: t('table.free'), data: nes.map(ne => sum(ne.nodes, n => n.mem_total_kb - n.mem_used_kb) / 1024 / 1024), backgroundColor: '#3fb95044', borderColor: '#3fb950', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } },
+      scales: {
+        x: { stacked: false, ticks: { color: '#6e7681' }, grid: { color: '#30363d' } },
+        y: { ticks: { color: '#6e7681', callback: v => v.toFixed(0) + ' GB' }, grid: { color: '#21262d' } }
+      }
+    }
+  });
+
+  // Doughnut
+  destroyChart('ne-hot-cold-chart');
+  const dCtx = document.getElementById('ne-hot-cold-chart').getContext('2d');
+  chartInstances['ne-hot-cold-chart'] = new Chart(dCtx, {
+    type: 'doughnut',
+    data: {
+      labels: [t('mem.hot'), t('mem.cold')],
+      datasets: [{ data: [hotMem/1073741824, coldMem/1073741824], backgroundColor: ['#ff6b35cc', '#4fc3f7cc'], borderColor: ['#ff6b35', '#4fc3f7'], borderWidth: 1, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  // Flame chart
+  drawFlameChart();
+}
+
+// ── Flame Chart (Canvas) ──
+function drawFlameChart() {
+  if (!appData) return;
+  const canvas = document.getElementById('flame-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth || 800;
+  canvas.width = W * dpr;
+  canvas.height = 290 * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = '290px';
+  ctx.scale(dpr, dpr);
+
+  const ROW_H = 22, GAP = 1, PAD = 0;
+  const nes = appData.network_elements;
+  const totalMem = sum(nes.flatMap(ne => ne.nodes), n => n.mem_total_kb);
+  
+  const palette = [
+    ['#ff6b35','#ff8c5a','#ffaa7e'],
+    ['#388bfd','#58a6ff','#79bcff'],
+    ['#3fb950','#56d267','#72e685'],
+    ['#d29922','#e8b53a','#f0c96e'],
+    ['#bc8cff','#c9a6ff','#d8c2ff'],
+    ['#39c5cf','#52d4de','#75e0e8'],
+  ];
+
+  const hitmap = [];
+  let y = PAD;
+
+  function drawRow(items, getLabel, getVal, getTot, level, pStart, pWidth, onClick) {
+    let x = PAD + pStart * (W - PAD*2);
+    const rowWidth = pWidth * (W - PAD*2);
+    items.forEach((item, i) => {
+      const v = getVal(item);
+      const tot = getTot(item);
+      const frac = tot > 0 ? v / tot : 0;
+      const bw = rowWidth * frac;
+      if (bw < 1) return;
+      const pal = palette[i % palette.length];
+      ctx.fillStyle = pal[level % pal.length];
+      ctx.fillRect(x, y, bw - GAP, ROW_H - GAP);
+      if (bw > 20) {
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.font = `500 10px -apple-system, sans-serif`;
+        ctx.textBaseline = 'middle';
+        const label = getLabel(item);
+        const tw = ctx.measureText(label).width;
+        if (tw + 8 < bw) {
+          ctx.fillText(label, x + 4, y + (ROW_H - GAP) / 2);
+        }
+      }
+      hitmap.push({ x1: x, y1: y, x2: x + bw - GAP, y2: y + ROW_H - GAP, item, onClick });
+      x += bw;
+    });
+  }
+
+  // Level 0: NEs
+  const neTotals = nes.map(ne => sum(ne.nodes, n => n.mem_total_kb));
+  const grandTotal = sum(neTotals);
+
+  let xOff = 0;
+  nes.forEach((ne, i) => {
+    const frac = neTotals[i] / grandTotal;
+    const usedFrac = sum(ne.nodes, n => n.mem_used_kb) / (neTotals[i] || 1);
+    const pal = palette[i % palette.length];
+    const bw = frac * (W - PAD*2);
+    ctx.fillStyle = pal[0];
+    ctx.fillRect(PAD + xOff * (W-PAD*2), y, bw - GAP, ROW_H - GAP);
+    if (bw > 30) {
+      ctx.fillStyle = 'rgba(0,0,0,0.75)';
+      ctx.font = '600 10px -apple-system,sans-serif';
+      ctx.textBaseline = 'middle';
+      const label = ne.name;
+      const tw = ctx.measureText(label).width;
+      if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+    }
+    hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: ne, type: 'ne' });
+    xOff += frac;
+  });
+  y += ROW_H;
+
+  // Level 1: Nodes
+  xOff = 0;
+  nes.forEach((ne, ni) => {
+    ne.nodes.forEach((node, i) => {
+      const frac = node.mem_total_kb / grandTotal;
+      const bw = frac * (W - PAD*2);
+      const pal = palette[(ni * 3 + i) % palette.length];
+      ctx.fillStyle = pal[1];
+      ctx.fillRect(PAD + xOff*(W-PAD*2), y, bw - GAP, ROW_H - GAP);
+      if (bw > 30) {
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.font = '500 10px -apple-system,sans-serif';
+        ctx.textBaseline = 'middle';
+        const label = node.name;
+        const tw = ctx.measureText(label).width;
+        if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+      }
+      hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node}, type: 'node' });
+      xOff += frac;
+    });
+  });
+  y += ROW_H;
+
+  // Level 2: Pods
+  xOff = 0;
+  nes.forEach((ne, ni) => {
+    ne.nodes.forEach((node, nii) => {
+      const nodeTotal = node.mem_total_kb;
+      const podTotal = sum(node.pods, p => p.working_set_bytes / 1024);
+      node.pods.forEach((pod, i) => {
+        const frac = (node.mem_total_kb / grandTotal) * (pod.working_set_bytes / 1024) / (podTotal || nodeTotal);
+        const bw = frac * (W - PAD*2);
+        const pal = palette[(ni * 5 + nii * 2 + i) % palette.length];
+        ctx.fillStyle = pal[2];
+        ctx.fillRect(PAD + xOff*(W-PAD*2), y, bw - GAP, ROW_H - GAP);
+        if (bw > 40) {
+          ctx.fillStyle = 'rgba(0,0,0,0.75)';
+          ctx.font = '500 10px -apple-system,sans-serif';
+          ctx.textBaseline = 'middle';
+          const label = pod.name.split('-').slice(0,2).join('-');
+          const tw = ctx.measureText(label).width;
+          if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+        }
+        hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod}, type: 'pod' });
+        xOff += frac;
+      });
+      const podUsed = sum(node.pods, p => p.working_set_bytes / 1024);
+      const remain = node.mem_total_kb / grandTotal - podUsed / grandTotal;
+      if (remain > 0) xOff += remain;
+    });
+  });
+  y += ROW_H;
+
+  // Level 3: Containers
+  xOff = 0;
+  nes.forEach((ne, ni) => {
+    ne.nodes.forEach((node, nii) => {
+      node.pods.forEach((pod, pi) => {
+        const ctrTotal = sum(pod.containers, c => c.usage_bytes);
+        const podShare = node.mem_total_kb / grandTotal;
+        const podFrac = pod.working_set_bytes / 1024 / (sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_total_kb);
+        pod.containers.forEach((ctr, i) => {
+          const frac = podShare * podFrac * ctr.usage_bytes / (ctrTotal || 1);
+          const bw = frac * (W - PAD*2);
+          const pal = palette[(ni * 7 + nii * 3 + pi * 2 + i) % palette.length];
+          ctx.fillStyle = adjustBrightness(pal[0], -20);
+          ctx.fillRect(PAD + xOff*(W-PAD*2), y, bw - GAP, ROW_H - GAP);
+          if (bw > 50) {
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            ctx.font = '500 10px -apple-system,sans-serif';
+            ctx.textBaseline = 'middle';
+            const label = ctr.name;
+            const tw = ctx.measureText(label).width;
+            if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+          }
+          hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr}, type: 'container' });
+          xOff += frac;
+        });
+        const podUsed = pod.working_set_bytes / 1024 / grandTotal;
+        xOff += Math.max(0, podFrac * podShare - sum(pod.containers, c => c.usage_bytes / ctrTotal * podFrac * podShare));
+      });
+      const nodeUsed = sum(node.pods, p => p.working_set_bytes / 1024) / grandTotal;
+      const nodeShare = node.mem_total_kb / grandTotal;
+      xOff += Math.max(0, nodeShare - nodeUsed);
+    });
+  });
+  y += ROW_H;
+
+  // Level 4: Processes
+  xOff = 0;
+  nes.forEach((ne, ni) => {
+    ne.nodes.forEach((node, nii) => {
+      const nodeShare = node.mem_total_kb / grandTotal;
+      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_total_kb;
+      node.pods.forEach((pod, pi) => {
+        const podShare = nodeShare * (pod.working_set_bytes / 1024) / nodePodTotal;
+        const podCtrTotal = sum(pod.containers, c => c.usage_bytes) || 1;
+        pod.containers.forEach((ctr, ci) => {
+          const ctrShare = podShare * ctr.usage_bytes / podCtrTotal;
+          const procTotal = sum(ctr.processes, p => p.vm_rss_kb * 1024) || 1;
+          ctr.processes.forEach((proc, i) => {
+            const frac = procTotal > 0 ? ctrShare * (proc.vm_rss_kb * 1024) / procTotal : 0;
+            const bw = frac * (W - PAD*2);
+            if (bw < 0.5) return;
+            const pal = palette[(ni * 11 + nii * 7 + pi * 5 + ci * 3 + i) % palette.length];
+            ctx.fillStyle = adjustBrightness(pal[2], -25);
+            ctx.fillRect(PAD + xOff*(W-PAD*2), y, Math.max(bw - GAP, 0.5), ROW_H - GAP);
+            if (bw > 60) {
+              ctx.fillStyle = 'rgba(255,255,255,0.88)';
+              ctx.font = '500 9px -apple-system,sans-serif';
+              ctx.textBaseline = 'middle';
+              const label = proc.name;
+              const tw = ctx.measureText(label).width;
+              if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+            }
+            hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr, proc}, type: 'process' });
+            xOff += frac;
+          });
+          const procUsed = sum(ctr.processes, p => p.vm_rss_kb * 1024) / (procTotal || 1) * ctrShare;
+          xOff += Math.max(0, ctrShare - procUsed);
+        });
+        const ctrUsed = sum(pod.containers, c => c.usage_bytes) / (podCtrTotal || 1) * podShare;
+        xOff += Math.max(0, podShare - ctrUsed);
+      });
+      const podUsed = sum(node.pods, p => p.working_set_bytes / 1024) / (nodePodTotal || 1) * nodeShare;
+      xOff += Math.max(0, nodeShare - podUsed);
+    });
+  });
+
+  // Row labels
+  const labels = [t('flame.l0'), t('flame.l1'), t('flame.l2'), t('flame.l3'), t('flame.l4')];
+  const flameLegend = document.getElementById('flame-legend');
+  if (flameLegend) {
+    flameLegend.innerHTML = labels.map((l, i) => {
+      const pal = palette[i % palette.length];
+      return `<div class="flame-legend-item"><div style="width:10px;height:10px;border-radius:2px;background:${pal[i%3]};flex-shrink:0"></div><span>${l}</span></div>`;
+    }).join('');
+  }
+
+  // Click handler
+  canvas.onclick = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    for (const h of hitmap) {
+      if (mx >= h.x1 && mx <= h.x2 && my >= h.y1 && my <= h.y2) {
+        if (h.type === 'ne') {
+          renderNodePage(h.item);
+          document.getElementById('nav-ne-'+h.item.id)?.click();
+        } else if (h.type === 'node') {
+          renderNodeDetail(h.item.ne, h.item.node);
+          document.getElementById('nav-node-'+h.item.node.id)?.click();
+        } else if (h.type === 'pod') {
+          renderPodPage(h.item.ne, h.item.node, h.item.pod);
+          document.getElementById('nav-pod-'+h.item.pod.id)?.click();
+        } else if (h.type === 'container') {
+          renderContainerPage(h.item.ne, h.item.node, h.item.pod, h.item.ctr);
+          document.getElementById('nav-ctr-'+h.item.ctr.id)?.click();
+        } else if (h.type === 'process') {
+          renderProcessPage(h.item.ne, h.item.node, h.item.pod, h.item.ctr, h.item.proc);
+          document.getElementById('nav-proc-'+h.item.proc.id)?.click();
+        }
+        break;
+      }
+    }
+  };
+}
+
+function adjustBrightness(hex, amount) {
+  const r = Math.max(0, Math.min(255, parseInt(hex.slice(1,3),16) + amount));
+  const g = Math.max(0, Math.min(255, parseInt(hex.slice(3,5),16) + amount));
+  const b = Math.max(0, Math.min(255, parseInt(hex.slice(5,7),16) + amount));
+  return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Node List Page (for a NE) ──
+function renderNodePage(ne) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-node');
+  page.classList.add('active');
+  
+  const totalMem = sum(ne.nodes, n => n.mem_total_kb) * 1024;
+  const usedMem = sum(ne.nodes, n => n.mem_used_kb) * 1024;
+  const hotMem = sum(ne.nodes, n => n.mem_hot_kb) * 1024;
+  const coldMem = sum(ne.nodes, n => n.mem_cold_kb) * 1024;
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb"><span onclick="navTo(null,'ne-overview');document.querySelector('.nav-item').click()" style="cursor:pointer;color:var(--accent)">${t('breadcrumb.overview')}</span><span class="sep">›</span><span>${ne.name}</span></div>
+        <div class="page-title">${ne.name}</div>
+        <div class="page-meta">${t('units.neTypeMeta', {type: ne.type, n: ne.nodes.length})}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stat-grid stat-grid-4">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-blue"></span>${t('stat.nodes')}</div>
+          <div class="stat-value c-blue">${ne.nodes.length}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-green"></span>${t('stat.totalMem')}</div>
+          <div class="stat-value">${fmt(totalMem)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-amber"></span>${t('stat.usedMem')}</div>
+          <div class="stat-value c-amber">${fmt(usedMem)}</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct(usedMem,totalMem)}%;background:${barColor(pct(usedMem,totalMem))}"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-hot"></span>${t('stat.hotCold')}</div>
+          <div class="stat-value" style="font-size:16px;">${pctStr(hotMem,hotMem+coldMem)} / ${pctStr(coldMem,hotMem+coldMem)}</div>
+          <div class="stat-sub">${t('stat.hotColdRatio')}</div>
+        </div>
+      </div>
+
+      <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
+        <div class="chart-card">
+          <div class="chart-title">${t('chart.nodeBar')}</div>
+          <div style="position:relative;height:200px;"><canvas id="node-bar-chart" role="img" aria-label="${t('chart.nodeBar')}"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">${t('chart.nodeHC')}</div>
+          <div class="doughnut-wrap">
+            <div class="doughnut-canvas-wrap">
+              <canvas id="node-hc-chart" role="img" aria-label="${t('chart.nodeHC')}"></canvas>
+              <div class="doughnut-center">
+                <div class="doughnut-center-val">${pctStr(hotMem,hotMem+coldMem)}</div>
+                <div class="doughnut-center-lab">${t('mem.hot')}</div>
+              </div>
+            </div>
+            <div class="doughnut-legend">
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--hot)"></div>
+                <div class="doughnut-legend-name">${t('mem.hot')}</div>
+                <div class="doughnut-legend-val">${fmt(hotMem)}</div>
+                <div class="doughnut-legend-pct">${pctStr(hotMem,hotMem+coldMem)}</div>
+              </div>
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--cold)"></div>
+                <div class="doughnut-legend-name">${t('mem.cold')}</div>
+                <div class="doughnut-legend-val">${fmt(coldMem)}</div>
+                <div class="doughnut-legend-pct">${pctStr(coldMem,hotMem+coldMem)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('table.nodeList')}</div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>${t('table.nodeName')}</th><th>${t('table.ip')}</th>
+              <th style="text-align:right">${t('table.total')}</th><th style="text-align:right">${t('table.avail')}</th><th style="text-align:right">${t('table.used')}</th>
+              <th style="text-align:right">${t('mem.hot')}</th><th style="text-align:right;min-width:130px">${t('table.usage')}</th>
+            </tr></thead>
+            <tbody id="node-table-body-${ne.id}"></tbody>
+          </table>
+        </div>
+      </div>
+      ${renderOrigInfo(ne)}
+    </div>
+  `;
+
+  const tbody = document.getElementById(`node-table-body-${ne.id}`);
+  ne.nodes.forEach(node => {
+    const tot = node.mem_total_kb * 1024;
+    const avail = node.mem_available_kb * 1024;
+    const used = node.mem_used_kb * 1024;
+    const hot = node.mem_hot_kb * 1024;
+    const usePct = pct(used, tot);
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => { renderNodeDetail(ne, node); document.getElementById('nav-node-'+node.id)?.click(); };
+    tr.innerHTML = `
+      <td class="name">${node.name}</td>
+      <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:var(--text2)">${node.ip}</code></td>
+      <td class="num">${fmt(tot)}</td>
+      <td class="num" style="color:var(--green)">${fmt(avail)}</td>
+      <td class="num">${fmt(used)}</td>
+      <td class="num" style="color:var(--hot)">${fmt(hot)} <small style="color:var(--text3)">(${pctStr(hot,tot)})</small></td>
+      <td>
+        <div class="pct-bar">
+          <div class="pct-track"><div class="pct-fill" style="width:${usePct}%;background:${barColor(usePct)}"></div></div>
+          <div class="pct-val" style="color:${barColor(usePct)}">${usePct}%</div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Charts
+  destroyChart('node-bar-chart');
+  destroyChart('node-hc-chart');
+  setTimeout(() => {
+    const bCtx = document.getElementById('node-bar-chart')?.getContext('2d');
+    if (bCtx) {
+      chartInstances['node-bar-chart'] = new Chart(bCtx, {
+        type: 'bar',
+        data: {
+          labels: ne.nodes.map(n => n.name),
+          datasets: [
+            { label: t('mem.hot'), data: ne.nodes.map(n => n.mem_hot_kb/1024/1024), backgroundColor: '#ff6b3566', borderColor: '#ff6b35', borderWidth: 1 },
+            { label: t('mem.cold'), data: ne.nodes.map(n => n.mem_cold_kb/1024/1024), backgroundColor: '#4fc3f766', borderColor: '#4fc3f7', borderWidth: 1 },
+          ]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 } } } }, scales: { x: { stacked: true, ticks: { color: '#6e7681' }, grid: { color: '#21262d' } }, y: { stacked: true, ticks: { color: '#6e7681', callback: v => v.toFixed(0)+'GB' }, grid: { color: '#21262d' } } } }
+      });
+    }
+    const dCtx = document.getElementById('node-hc-chart')?.getContext('2d');
+    if (dCtx) {
+      chartInstances['node-hc-chart'] = new Chart(dCtx, {
+        type: 'doughnut',
+        data: { labels: [t('mem.hot'), t('mem.cold')], datasets: [{ data: [hotMem/1e9, coldMem/1e9], backgroundColor: ['#ff6b35cc','#4fc3f7cc'], borderColor: ['#ff6b35','#4fc3f7'], borderWidth: 1, hoverOffset: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+      });
+    }
+  }, 50);
+}
+
+// ── Node Detail Page ──
+function renderNodeDetail(ne, node) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-node');
+  page.classList.add('active');
+
+  const tot = node.mem_total_kb * 1024;
+  const avail = node.mem_available_kb * 1024;
+  const used = node.mem_used_kb * 1024;
+  const hot = node.mem_hot_kb * 1024;
+  const cold = node.mem_cold_kb * 1024;
+  const usePct = pct(used, tot);
+  const hotPct = pct(hot, tot);
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
+          <span onclick="renderNodePage(${JSON.stringify(ne).replace(/"/g,'&quot;')})" style="cursor:pointer;color:var(--accent)">${ne.name}</span><span class="sep">›</span>
+          <span>${node.name}</span>
+        </div>
+        <div class="page-title">${node.name}</div>
+        <div class="page-meta"><code style="font-family:var(--font-mono);font-size:11px;">${node.ip}</code> · ${t('units.pods', {n: node.pods.length})}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="stat-grid stat-grid-4">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-green"></span>${t('stat.totalMem')}</div>
+          <div class="stat-value">${fmt(tot)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-green"></span>${t('stat.availMem')}</div>
+          <div class="stat-value c-green">${fmt(avail)}</div>
+          <div class="stat-sub">${t('stat.memAvail')}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-amber"></span>${t('stat.usedMem')}</div>
+          <div class="stat-value c-amber">${fmt(used)}</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${usePct}%;background:${barColor(usePct)}"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-blue"></span>${t('stat.memUsage')}</div>
+          <div class="stat-value" style="color:${barColor(usePct)}">${usePct}%</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${usePct}%;background:${barColor(usePct)}"></div></div>
+        </div>
+      </div>
+      <div class="stat-grid stat-grid-2" style="margin-top:0;">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-hot"></span>${t('mem.hot')}</div>
+          <div class="stat-value" style="color:var(--hot)">${fmt(hot)}</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${hotPct}%;background:var(--hot)"></div></div>
+          <div class="stat-sub">${hotPct}% of total · ${t('stat.activeAnonCache')}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-cold"></span>${t('mem.cold')}</div>
+          <div class="stat-value" style="color:var(--cold)">${fmt(cold)}</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${pct(cold,tot)}%;background:var(--cold)"></div></div>
+          <div class="stat-sub">${pct(cold,tot)}% of total · ${t('stat.inactiveAnonCache')}</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">${t('table.podList')}</div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>${t('table.podName')}</th><th>${t('table.namespace')}</th>
+              <th style="text-align:right">${t('table.ws')}</th><th style="text-align:right">${t('table.rss')}</th>
+              <th style="text-align:right">${t('table.limits')}</th><th style="text-align:right;min-width:130px">${t('table.usage')}</th>
+            </tr></thead>
+            <tbody id="pod-list-body"></tbody>
+          </table>
+        </div>
+      </div>
+      ${renderOrigInfo(node)}
+    </div>
+  `;
+
+  const tbody = document.getElementById('pod-list-body');
+  node.pods.forEach(pod => {
+    const ws = pod.working_set_bytes;
+    const lim = pod.limits_memory_bytes;
+    const usePct2 = pct(ws, lim);
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => { renderPodPage(ne, node, pod); document.getElementById('nav-pod-'+pod.id)?.click(); };
+    tr.innerHTML = `
+      <td class="name">${pod.name}</td>
+      <td><span class="badge badge-purple">${pod.namespace}</span></td>
+      <td class="num">${fmt(ws)}</td>
+      <td class="num">${fmt(pod.rss_bytes)}</td>
+      <td class="num">${fmt(lim)}</td>
+      <td>
+        <div class="pct-bar">
+          <div class="pct-track"><div class="pct-fill" style="width:${Math.min(usePct2,100)}%;background:${barColor(usePct2)}"></div></div>
+          <div class="pct-val" style="color:${barColor(usePct2)}">${usePct2}%</div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Pod Page ──
+function renderPodPage(ne, node, pod) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-pod');
+  page.classList.add('active');
+
+  const ws = pod.working_set_bytes;
+  const rss = pod.rss_bytes;
+  const req = pod.requests_memory_bytes;
+  const lim = pod.limits_memory_bytes;
+  const hot = pod.active_anon_bytes + pod.active_file_bytes;
+  const cold = pod.inactive_anon_bytes + pod.inactive_file_bytes;
+  const usePct = pct(ws, lim);
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePage(window._ne_${ne.id}||appData.network_elements.find(x=>x.id=='${ne.id}'))">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetail(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'))">${node.name}</span><span class="sep">›</span>
+          <span>${pod.name}</span>
+        </div>
+        <div class="page-title">${pod.name}</div>
+        <div class="page-meta">命名空间: ${pod.namespace} · ${pod.containers.length} 个容器</div>
+      </div>
+    </div>
+    <div class="content">
+      <!-- 静态配额 -->
+      <div class="section-title" style="margin-bottom:12px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        静态资源配额
+      </div>
+      <div class="stat-grid stat-grid-3" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-green"></span>内存 Requests</div>
+          <div class="stat-value c-green">${fmt(req)}</div>
+          <div class="stat-sub">requests.memory</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-red"></span>内存 Limits</div>
+          <div class="stat-value c-red">${fmt(lim)}</div>
+          <div class="stat-sub">limits.memory</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-blue"></span>Pod 总配额</div>
+          <div class="stat-value c-blue">${fmt(lim)}</div>
+          <div class="stat-sub">所有容器合计</div>
+        </div>
+      </div>
+
+      <!-- 实时占用 -->
+      <div class="section-title" style="margin-bottom:12px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        实时运行占用
+      </div>
+      <div class="stat-grid stat-grid-3" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-blue"></span>工作集 (Working Set)</div>
+          <div class="stat-value">${fmt(ws)}</div>
+          <div class="stat-sub">同 kubectl top</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-amber"></span>物理常驻 RSS</div>
+          <div class="stat-value c-amber">${fmt(rss)}</div>
+          <div class="stat-sub">Resident Set Size</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-${usePct > 80 ? 'red' : 'green'}"></span>内存使用率</div>
+          <div class="stat-value" style="color:${barColor(usePct)}">${usePct}%</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${Math.min(usePct,100)}%;background:${barColor(usePct)}"></div></div>
+          <div class="stat-sub">实时 / Limits</div>
+        </div>
+      </div>
+
+      <!-- 冷热内存 -->
+      <div class="section-title" style="margin-bottom:12px;">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+        冷热内存
+      </div>
+      <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
+        <div class="chart-card">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div class="stat-card" style="background:var(--bg3);">
+              <div class="stat-label"><span class="dot dot-hot"></span>${t('mem.hot')}</div>
+              <div class="stat-value" style="font-size:16px;color:var(--hot)">${fmt(hot)}</div>
+              <div class="stat-sub">活跃匿名+活跃缓存</div>
+            </div>
+            <div class="stat-card" style="background:var(--bg3);">
+              <div class="stat-label"><span class="dot dot-cold"></span>${t('mem.cold')}</div>
+              <div class="stat-value" style="font-size:16px;color:var(--cold)">${fmt(cold)}</div>
+              <div class="stat-sub">非活跃匿名+非活跃缓存</div>
+            </div>
+          </div>
+          <div style="font-size:11px;color:var(--text3);">
+            active_anon: ${fmt(pod.active_anon_bytes)} · inactive_anon: ${fmt(pod.inactive_anon_bytes)}<br>
+            active_file: ${fmt(pod.active_file_bytes)} · inactive_file: ${fmt(pod.inactive_file_bytes)}
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">冷热内存占比</div>
+          <div class="doughnut-wrap">
+            <div class="doughnut-canvas-wrap">
+              <canvas id="pod-hc-chart" role="img" aria-label="Pod冷热内存饼图"></canvas>
+              <div class="doughnut-center">
+                <div class="doughnut-center-val">${pctStr(hot,hot+cold)}</div>
+                <div class="doughnut-center-lab">${t('mem.hot')}</div>
+              </div>
+            </div>
+            <div class="doughnut-legend">
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--hot)"></div>
+                <div class="doughnut-legend-name">${t('mem.hot')}</div>
+                <div class="doughnut-legend-val">${fmt(hot)}</div>
+                <div class="doughnut-legend-pct">${pctStr(hot,hot+cold)}</div>
+              </div>
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--cold)"></div>
+                <div class="doughnut-legend-name">${t('mem.cold')}</div>
+                <div class="doughnut-legend-val">${fmt(cold)}</div>
+                <div class="doughnut-legend-pct">${pctStr(cold,hot+cold)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Container list -->
+      <div class="section">
+        <div class="section-title">容器列表（点击查看详情）</div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>容器名称</th><th style="text-align:right">Requests</th><th style="text-align:right">Limits</th>
+              <th style="text-align:right">RSS</th><th style="text-align:right">使用量</th>
+              <th style="text-align:right;min-width:130px">使用率</th>
+            </tr></thead>
+            <tbody id="ctr-list-body"></tbody>
+          </table>
+        </div>
+      </div>
+      ${renderOrigInfo(pod)}
+    </div>
+  `;
+
+  destroyChart('pod-hc-chart');
+  setTimeout(() => {
+    const dCtx = document.getElementById('pod-hc-chart')?.getContext('2d');
+    if (dCtx) {
+      chartInstances['pod-hc-chart'] = new Chart(dCtx, {
+        type: 'doughnut',
+        data: { labels: [t('mem.hot'), t('mem.cold')], datasets: [{ data: [hot/1e6, cold/1e6], backgroundColor: ['#ff6b35cc','#4fc3f7cc'], borderColor: ['#ff6b35','#4fc3f7'], borderWidth: 1, hoverOffset: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+      });
+    }
+  }, 50);
+
+  const tbody = document.getElementById('ctr-list-body');
+  pod.containers.forEach(ctr => {
+    const up = pct(ctr.usage_bytes, ctr.limits_memory_bytes);
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => { renderContainerPage(ne, node, pod, ctr); document.getElementById('nav-ctr-'+ctr.id)?.click(); };
+    tr.innerHTML = `
+      <td class="name">${ctr.name}</td>
+      <td class="num">${fmt(ctr.requests_memory_bytes)}</td>
+      <td class="num">${fmt(ctr.limits_memory_bytes)}</td>
+      <td class="num">${fmt(ctr.rss_bytes)}</td>
+      <td class="num">${fmt(ctr.usage_bytes)}</td>
+      <td>
+        <div class="pct-bar">
+          <div class="pct-track"><div class="pct-fill" style="width:${Math.min(up,100)}%;background:${barColor(up)}"></div></div>
+          <div class="pct-val" style="color:${barColor(up)}">${up}%</div>
+        </div>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Container Page ──
+function renderContainerPage(ne, node, pod, ctr) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-container');
+  page.classList.add('active');
+
+  const hot = ctr.active_anon_bytes + ctr.active_file_bytes;
+  const cold = ctr.inactive_anon_bytes + ctr.inactive_file_bytes;
+  const up = pct(ctr.usage_bytes, ctr.limits_memory_bytes);
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePage(appData.network_elements.find(x=>x.id=='${ne.id}'))">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetail(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'))">${node.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderPodPage(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}'))">${pod.name.substring(0,20)}</span><span class="sep">›</span>
+          <span>${ctr.name}</span>
+        </div>
+        <div class="page-title">${ctr.name}</div>
+        <div class="page-meta">容器 · ${ctr.processes.length} 个进程</div>
+      </div>
+    </div>
+    <div class="content">
+      <!-- 配额 -->
+      <div class="section-title" style="margin-bottom:12px;">配额限制</div>
+      <div class="stat-grid stat-grid-2" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-green"></span>内存 Requests</div>
+          <div class="stat-value c-green">${fmt(ctr.requests_memory_bytes)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-red"></span>内存 Limits</div>
+          <div class="stat-value c-red">${fmt(ctr.limits_memory_bytes)}</div>
+        </div>
+      </div>
+
+      <!-- 实时指标 -->
+      <div class="section-title" style="margin-bottom:12px;">实时占用指标</div>
+      <div class="stat-grid stat-grid-3" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-amber"></span>RSS 物理常驻</div>
+          <div class="stat-value c-amber">${fmt(ctr.rss_bytes)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-blue"></span>总内存使用</div>
+          <div class="stat-value">${fmt(ctr.usage_bytes)}</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${Math.min(up,100)}%;background:${barColor(up)}"></div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label"><span class="dot dot-${up > 80 ? 'red':'green'}"></span>使用率</div>
+          <div class="stat-value" style="color:${barColor(up)}">${up}%</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${Math.min(up,100)}%;background:${barColor(up)}"></div></div>
+        </div>
+      </div>
+
+      <!-- 冷热 -->
+      <div class="section-title" style="margin-bottom:12px;">容器冷热内存</div>
+      <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
+        <div class="chart-card">
+          <div class="chart-title">内存分类明细</div>
+          <div style="display:grid;gap:8px;">
+            ${[
+              ['active_anon', ctr.active_anon_bytes, ctr.usage_bytes, '#ff6b35'],
+              ['inactive_anon', ctr.inactive_anon_bytes, ctr.usage_bytes, '#4fc3f7'],
+              ['active_file', ctr.active_file_bytes, ctr.usage_bytes, '#ff9f57'],
+              ['inactive_file', ctr.inactive_file_bytes, ctr.usage_bytes, '#7ad8e8'],
+            ].map(([name,val,tot,color]) => `
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;color:var(--text3);">${name}</span>
+                  <span style="font-size:11px;font-family:var(--font-mono);color:var(--text2)">${fmt(val)} <span style="color:var(--text3)">(${pctStr(val,tot)})</span></span>
+                </div>
+                <div style="height:4px;background:var(--bg4);border-radius:2px;overflow:hidden">
+                  <div style="height:100%;width:${pct(val,tot)}%;background:${color};border-radius:2px"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">冷热内存比例</div>
+          <div class="doughnut-wrap">
+            <div class="doughnut-canvas-wrap">
+              <canvas id="ctr-hc-chart" role="img" aria-label="容器冷热内存饼图"></canvas>
+              <div class="doughnut-center">
+                <div class="doughnut-center-val">${pctStr(hot,hot+cold)}</div>
+                <div class="doughnut-center-lab">${t('mem.hot')}</div>
+              </div>
+            </div>
+            <div class="doughnut-legend">
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--hot)"></div>
+                <div class="doughnut-legend-name">${t('mem.hot')}</div>
+                <div class="doughnut-legend-val">${fmt(hot)}</div>
+                <div class="doughnut-legend-pct">${pctStr(hot,hot+cold)}</div>
+              </div>
+              <div class="doughnut-legend-row">
+                <div class="doughnut-legend-dot" style="background:var(--cold)"></div>
+                <div class="doughnut-legend-name">${t('mem.cold')}</div>
+                <div class="doughnut-legend-val">${fmt(cold)}</div>
+                <div class="doughnut-legend-pct">${pctStr(cold,hot+cold)}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Process list -->
+      <div class="section">
+        <div class="section-title">进程列表（点击查看详情）</div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>PID</th><th>进程名</th>
+              <th style="text-align:right">VmRSS</th><th style="text-align:right">VmHWM</th>
+              <th style="text-align:right">VmPSS</th><th style="text-align:right">VmSwap</th>
+            </tr></thead>
+            <tbody id="proc-list-body"></tbody>
+          </table>
+        </div>
+      </div>
+      ${renderOrigInfo(ctr)}
+    </div>
+  `;
+
+  destroyChart('ctr-hc-chart');
+  setTimeout(() => {
+    const dCtx = document.getElementById('ctr-hc-chart')?.getContext('2d');
+    if (dCtx) {
+      chartInstances['ctr-hc-chart'] = new Chart(dCtx, {
+        type: 'doughnut',
+        data: { labels: [t('mem.hot'), t('mem.cold')], datasets: [{ data: [hot/1e6,cold/1e6], backgroundColor: ['#ff6b35cc','#4fc3f7cc'], borderColor: ['#ff6b35','#4fc3f7'], borderWidth: 1, hoverOffset: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false } } }
+      });
+    }
+  }, 50);
+
+  const tbody = document.getElementById('proc-list-body');
+  ctr.processes.forEach(proc => {
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    tr.onclick = () => { renderProcessPage(ne, node, pod, ctr, proc); document.getElementById('nav-proc-'+proc.id)?.click(); };
+    tr.innerHTML = `
+      <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:var(--cyan)">${proc.pid}</code></td>
+      <td class="name">${proc.name}</td>
+      <td class="num">${fmtKB(proc.vm_rss_kb)}</td>
+      <td class="num">${fmtKB(proc.vm_hwm_kb)}</td>
+      <td class="num">${fmtKB(proc.vm_pss_kb)}</td>
+      <td class="num" style="color:${proc.vm_swap_kb > 0 ? 'var(--amber)':'var(--text3)'}">${fmtKB(proc.vm_swap_kb)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Process Page ──
+function renderProcessPage(ne, node, pod, ctr, proc) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const page = document.getElementById('page-process');
+  page.classList.add('active');
+
+  const metrics = [
+    { key: 'VmRSS', val: fmtKB(proc.vm_rss_kb), raw: proc.vm_rss_kb, desc: '进程当前物理内存占用', color: 'var(--blue)' },
+    { key: 'VmHWM', val: fmtKB(proc.vm_hwm_kb), raw: proc.vm_hwm_kb, desc: '进程内存峰值 (High Water Mark)', color: 'var(--purple)' },
+    { key: 'RssAnon', val: fmtKB(proc.rss_anon_kb), raw: proc.rss_anon_kb, desc: '进程私有匿名内存', color: 'var(--amber)' },
+    { key: 'RssFile', val: fmtKB(proc.rss_file_kb), raw: proc.rss_file_kb, desc: '进程文件映射内存', color: 'var(--green)' },
+    { key: 'RssShmem', val: fmtKB(proc.rss_shmem_kb), raw: proc.rss_shmem_kb, desc: '共享内存开销', color: 'var(--cyan)' },
+    { key: 'VmPSS', val: fmtKB(proc.vm_pss_kb), raw: proc.vm_pss_kb, desc: '均分共享后精准内存 (Proportional)', color: 'var(--teal)' },
+    { key: 'VmUSS', val: fmtKB(proc.vm_uss_kb), raw: proc.vm_uss_kb, desc: '进程纯私有内存 (Unique)', color: 'var(--hot)' },
+    { key: 'VmSwap', val: fmtKB(proc.vm_swap_kb), raw: proc.vm_swap_kb, desc: '进程交换分区使用', color: proc.vm_swap_kb > 0 ? 'var(--red)' : 'var(--text3)' },
+  ];
+
+  const maxVal = Math.max(...metrics.map(m => m.raw));
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
+          <span>…</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderContainerPage(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}').containers.find(x=>x.id=='${ctr.id}'))">${ctr.name}</span><span class="sep">›</span>
+          <span>${proc.name}</span>
+        </div>
+        <div class="page-title">${proc.name}</div>
+        <div class="page-meta">PID: ${proc.pid} · 容器: ${ctr.name}</div>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section-title" style="margin-bottom:12px;">进程内存指标</div>
+
+      <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr><th>指标</th><th style="text-align:right">值</th><th style="min-width:120px">说明</th></tr></thead>
+            <tbody>
+              ${metrics.map(m => `
+              <tr>
+                <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:${m.color}">${m.key}</code></td>
+                <td class="num" style="color:${m.color}">${m.val}</td>
+                <td style="font-size:11px;color:var(--text3);">${m.desc}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">内存指标对比</div>
+          <div style="position:relative;height:260px;"><canvas id="proc-bar-chart" role="img" aria-label="进程内存指标柱状图"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Memory breakdown -->
+      <div class="chart-card">
+        <div class="chart-title">指标详细分布（按比例）</div>
+        <div style="display:grid;gap:10px;margin-top:8px;">
+          ${metrics.filter(m=>m.raw > 0).map(m => `
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:12px;font-family:var(--font-mono);color:${m.color}">${m.key}</span>
+                <span style="font-size:12px;font-family:var(--font-mono);color:var(--text2)">${m.val}</span>
+              </div>
+              <div style="height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
+                <div style="height:100%;width:${pct(m.raw,maxVal)}%;background:${m.color};border-radius:3px;transition:width 0.5s"></div>
+              </div>
+              <div style="font-size:10px;color:var(--text3);margin-top:2px;">${m.desc}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      ${renderOrigInfo(proc)}
+    </div>
+  `;
+
+  destroyChart('proc-bar-chart');
+  setTimeout(() => {
+    const bCtx = document.getElementById('proc-bar-chart')?.getContext('2d');
+    if (!bCtx) return;
+    chartInstances['proc-bar-chart'] = new Chart(bCtx, {
+      type: 'bar',
+      data: {
+        labels: metrics.map(m => m.key),
+        datasets: [{
+          label: '内存 (KB)',
+          data: metrics.map(m => m.raw),
+          backgroundColor: metrics.map(m => m.color.replace('var(--','').replace(')','') === 'text3' ? '#30363d' : '#388bfd44'),
+          borderColor: metrics.map((m,i) => ['#388bfd','#bc8cff','#d29922','#3fb950','#39c5cf','#39d353','#ff6b35','#f85149'][i]),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#6e7681', callback: v => v >= 1024*1024 ? (v/1024/1024).toFixed(1)+'GB' : v >= 1024 ? (v/1024).toFixed(0)+'MB' : v+'KB' }, grid: { color: '#21262d' } },
+          y: { ticks: { color: '#8b949e', font: { family: 'monospace', size: 11 } }, grid: { color: '#21262d' } }
+        }
+      }
+    });
+  }, 50);
+}
+</script>
+</body>
+</html>
