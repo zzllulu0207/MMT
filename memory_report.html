@@ -124,15 +124,22 @@
   .nav-expand.open { transform: rotate(90deg); }
 
   .nav-toggle {
-    width: 14px; height: 14px;
+    width: 18px; height: 18px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-size: 8px; color: var(--text3);
+    font-size: 11px; color: var(--text2);
     cursor: pointer; flex-shrink: 0;
-    transition: transform 0.15s;
+    transition: transform 0.2s ease;
     user-select: none;
     line-height: 1;
+    border-radius: 4px;
+    background: var(--bg3);
+    font-weight: 700;
   }
-  .nav-toggle:hover { color: var(--text2); }
+  .nav-toggle:hover {
+    color: var(--accent);
+    background: var(--bg4);
+  }
+  .nav-toggle:not(.collapsed) { transform: rotate(90deg); }
   .nav-children.collapsed { display: none; }
 
   /* ── Header ── */
@@ -789,7 +796,7 @@ function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn,
 
   var html = '';
   if (hasChildren) {
-    html += '<span class="nav-toggle collapsed">▶</span>';
+    html += '<span class="nav-toggle"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M3 1l5 4-5 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
   }
   if (iconHtml) {
     html += iconHtml;
@@ -805,7 +812,6 @@ function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn,
       if (children && children.classList.contains('nav-children')) {
         children.classList.toggle('collapsed');
         toggle.classList.toggle('collapsed');
-        toggle.textContent = children.classList.contains('collapsed') ? '▶' : '▼';
       }
     });
   }
@@ -1067,16 +1073,13 @@ function drawFlameChart() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth || 800;
+  const W = canvas.clientWidth || 800;
   canvas.width = W * dpr;
   canvas.height = 290 * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = '290px';
   ctx.scale(dpr, dpr);
 
   const ROW_H = 22, GAP = 1, PAD = 0;
   const nes = appData.network_elements;
-  const totalMem = sum(nes.flatMap(ne => ne.nodes), n => n.mem_total_kb);
   
   const palette = [
     ['#ff6b35','#ff8c5a','#ffaa7e'],
@@ -1090,41 +1093,13 @@ function drawFlameChart() {
   const hitmap = [];
   let y = PAD;
 
-  function drawRow(items, getLabel, getVal, getTot, level, pStart, pWidth, onClick) {
-    let x = PAD + pStart * (W - PAD*2);
-    const rowWidth = pWidth * (W - PAD*2);
-    items.forEach((item, i) => {
-      const v = getVal(item);
-      const tot = getTot(item);
-      const frac = tot > 0 ? v / tot : 0;
-      const bw = rowWidth * frac;
-      if (bw < 1) return;
-      const pal = palette[i % palette.length];
-      ctx.fillStyle = pal[level % pal.length];
-      ctx.fillRect(x, y, bw - GAP, ROW_H - GAP);
-      if (bw > 20) {
-        ctx.fillStyle = 'rgba(0,0,0,0.7)';
-        ctx.font = `500 10px -apple-system, sans-serif`;
-        ctx.textBaseline = 'middle';
-        const label = getLabel(item);
-        const tw = ctx.measureText(label).width;
-        if (tw + 8 < bw) {
-          ctx.fillText(label, x + 4, y + (ROW_H - GAP) / 2);
-        }
-      }
-      hitmap.push({ x1: x, y1: y, x2: x + bw - GAP, y2: y + ROW_H - GAP, item, onClick });
-      x += bw;
-    });
-  }
-
-  // Level 0: NEs
-  const neTotals = nes.map(ne => sum(ne.nodes, n => n.mem_total_kb));
+  // Level 0: NEs — width based on used memory
+  const neTotals = nes.map(ne => sum(ne.nodes, n => n.mem_used_kb));
   const grandTotal = sum(neTotals);
 
   let xOff = 0;
   nes.forEach((ne, i) => {
     const frac = neTotals[i] / grandTotal;
-    const usedFrac = sum(ne.nodes, n => n.mem_used_kb) / (neTotals[i] || 1);
     const pal = palette[i % palette.length];
     const bw = frac * (W - PAD*2);
     ctx.fillStyle = pal[0];
@@ -1142,11 +1117,11 @@ function drawFlameChart() {
   });
   y += ROW_H;
 
-  // Level 1: Nodes
+  // Level 1: Nodes — width based on used memory
   xOff = 0;
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, i) => {
-      const frac = node.mem_total_kb / grandTotal;
+      const frac = node.mem_used_kb / grandTotal;
       const bw = frac * (W - PAD*2);
       const pal = palette[(ni * 3 + i) % palette.length];
       ctx.fillStyle = pal[1];
@@ -1165,14 +1140,16 @@ function drawFlameChart() {
   });
   y += ROW_H;
 
-  // Level 2: Pods
+  // Level 2: Pods — proportional within parent node
   xOff = 0;
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, nii) => {
-      const nodeTotal = node.mem_total_kb;
+      const nodeTotal = node.mem_used_kb;
       const podTotal = sum(node.pods, p => p.working_set_bytes / 1024);
       node.pods.forEach((pod, i) => {
-        const frac = (node.mem_total_kb / grandTotal) * (pod.working_set_bytes / 1024) / (podTotal || nodeTotal);
+        const frac = podTotal > 0
+          ? (node.mem_used_kb / grandTotal) * (pod.working_set_bytes / 1024) / podTotal
+          : 0;
         const bw = frac * (W - PAD*2);
         const pal = palette[(ni * 5 + nii * 2 + i) % palette.length];
         ctx.fillStyle = pal[2];
@@ -1188,23 +1165,20 @@ function drawFlameChart() {
         hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod}, type: 'pod' });
         xOff += frac;
       });
-      const podUsed = sum(node.pods, p => p.working_set_bytes / 1024);
-      const remain = node.mem_total_kb / grandTotal - podUsed / grandTotal;
-      if (remain > 0) xOff += remain;
     });
   });
   y += ROW_H;
 
-  // Level 3: Containers
+  // Level 3: Containers — proportional within parent pod
   xOff = 0;
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, nii) => {
+      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_used_kb;
       node.pods.forEach((pod, pi) => {
-        const ctrTotal = sum(pod.containers, c => c.usage_bytes);
-        const podShare = node.mem_total_kb / grandTotal;
-        const podFrac = pod.working_set_bytes / 1024 / (sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_total_kb);
+        const ctrTotal = sum(pod.containers, c => c.usage_bytes) || 1;
+        const podWidth = (node.mem_used_kb / grandTotal) * (pod.working_set_bytes / 1024) / nodePodTotal;
         pod.containers.forEach((ctr, i) => {
-          const frac = podShare * podFrac * ctr.usage_bytes / (ctrTotal || 1);
+          const frac = podWidth * ctr.usage_bytes / ctrTotal;
           const bw = frac * (W - PAD*2);
           const pal = palette[(ni * 7 + nii * 3 + pi * 2 + i) % palette.length];
           ctx.fillStyle = adjustBrightness(pal[0], -20);
@@ -1220,22 +1194,17 @@ function drawFlameChart() {
           hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr}, type: 'container' });
           xOff += frac;
         });
-        const podUsed = pod.working_set_bytes / 1024 / grandTotal;
-        xOff += Math.max(0, podFrac * podShare - sum(pod.containers, c => c.usage_bytes / ctrTotal * podFrac * podShare));
       });
-      const nodeUsed = sum(node.pods, p => p.working_set_bytes / 1024) / grandTotal;
-      const nodeShare = node.mem_total_kb / grandTotal;
-      xOff += Math.max(0, nodeShare - nodeUsed);
     });
   });
   y += ROW_H;
 
-  // Level 4: Processes
+  // Level 4: Processes — proportional within parent container
   xOff = 0;
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, nii) => {
-      const nodeShare = node.mem_total_kb / grandTotal;
-      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_total_kb;
+      const nodeShare = node.mem_used_kb / grandTotal;
+      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_used_kb;
       node.pods.forEach((pod, pi) => {
         const podShare = nodeShare * (pod.working_set_bytes / 1024) / nodePodTotal;
         const podCtrTotal = sum(pod.containers, c => c.usage_bytes) || 1;
@@ -1260,14 +1229,8 @@ function drawFlameChart() {
             hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr, proc}, type: 'process' });
             xOff += frac;
           });
-          const procUsed = sum(ctr.processes, p => p.vm_rss_kb * 1024) / (procTotal || 1) * ctrShare;
-          xOff += Math.max(0, ctrShare - procUsed);
         });
-        const ctrUsed = sum(pod.containers, c => c.usage_bytes) / (podCtrTotal || 1) * podShare;
-        xOff += Math.max(0, podShare - ctrUsed);
       });
-      const podUsed = sum(node.pods, p => p.working_set_bytes / 1024) / (nodePodTotal || 1) * nodeShare;
-      xOff += Math.max(0, nodeShare - podUsed);
     });
   });
 
