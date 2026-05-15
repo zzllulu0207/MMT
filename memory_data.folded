@@ -1,0 +1,25 @@
+NE-Core-01 90701824
+NE-Core-01;worker-node-01 43515904
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c 183500800
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx 104857600
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: master 51200
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: worker 26624
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter 78643200
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter;nginx-exporter 38912
+NE-Core-01;worker-node-01;api-server-5c8f2d 698351616
+NE-Core-01;worker-node-01;api-server-5c8f2d;api-server 698351616
+NE-Core-01;worker-node-01;api-server-5c8f2d;api-server;api-server 342016
+NE-Core-01;worker-node-02 47185920
+NE-Core-01;worker-node-02;redis-cache-3a9d1e 402653184
+NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis 402653184
+NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis;redis-server 196608
+NE-Edge-02 20185088
+NE-Edge-02;edge-node-01 20185088
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f 96468992
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy 96468992
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy 47104
+NE-test-001 20185088
+NE-test-001;edge-node-01 20185088
+NE-test-001;edge-node-01;edge-proxy-8b2c4f 96468992
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy 96468992
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy 47104

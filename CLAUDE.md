@@ -19,6 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 V1 and V2 produce identical `memory_data.json` format — the HTML report works with either.
 
+Pre-built `memory_data.json` and `memory_data.folded` exist in the repo root for immediate testing — no collectors needed to open the HTML report.
+
+See also: `DESIGN.md` (V1 architecture, Chinese), `data_collect_V2/DESIGN.md` (V2 architecture, Chinese).
+
 ## Data model (5-level hierarchy)
 
 `memory_data.json` has a nested structure: **NE → Node → Pod → Container → Process**, with globally unique sequential IDs (`ne-001`, `node-001`, `pod-001`, `ctr-001`, `proc-001`). Every entity carries an `original_info` field with the raw system text for traceability. See `DESIGN.md` §2 for the full JSON schema.
@@ -50,6 +54,10 @@ python3 data_collect_V2/aggregator.py --nodes-info data/nodes_info.json \
 # View report
 python3 -m http.server 8080
 # Open http://localhost:8080/memory_report.html
+
+# Export to FlameGraph folded format (Python or Node)
+python3 export_folded.py memory_data.json -o memory_data.folded
+node export_folded.js memory_data.json -o memory_data.folded
 ```
 
 ## Key design patterns
@@ -62,6 +70,11 @@ python3 -m http.server 8080
 - **kubectl bypass**: Collector/node_collector accepts `--pods-info` to load K8s metadata from a file, avoiding in-cluster kubectl calls entirely
 - **CSV export**: the HTML report exports CSV at every level (NE, Node, Pod, Container, Process) with UTF-8 BOM for Excel compatibility. All export buttons use the shared `exportToCSV()` function.
 - **Data loading**: the report fetches `memory_data.json` via `fetch()` on load; if that fails (file:// protocol), it falls back to a manual file-picker via FileReader
+- **FlameGraph export**: `export_folded.py` (Python) and `export_folded.js` (Node) both convert `memory_data.json` to Brendan Gregg's folded stack format. They produce identical output — pick whichever runtime is available. The output feeds into flamegraph.pl for SVG generation.
+
+## Commit conventions
+
+This repo uses conventional commits: `feat:`, `fix:`, `docs:`, `chore:` prefixes.
 
 ## Known quirks
 

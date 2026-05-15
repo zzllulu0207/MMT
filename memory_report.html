@@ -594,10 +594,22 @@ function setLang(lang) {
   });
   applyI18n();
   if (appData) {
-    buildNavTree();
-    renderNEOverview();
-    navTo(document.querySelector('.nav-item'), 'ne-overview');
-    setTimeout(autoLoadSVG, 100);
+    // Update nav section titles
+    var sections = document.querySelectorAll('.nav-section');
+    if (sections[0]) sections[0].textContent = t('nav.views');
+    if (sections[1]) sections[1].textContent = t('nav.neSection');
+    // Re-render current page only (nav tree DOM stays)
+    var activePage = document.querySelector('.page.active');
+    var activeNav = document.querySelector('.nav-item.active');
+    if (activePage && activeNav) {
+      var pageId = activePage.id;
+      if (pageId === 'page-ne-overview') {
+        renderNEOverview();
+      } else if (activeNav.dataset.page) {
+        // Re-trigger the nav item's click to re-render with new language
+        activeNav.click();
+      }
+    }
   }
 }
 
@@ -694,6 +706,45 @@ function sum(arr, fn) { return arr.reduce((acc, x) => acc + (fn ? fn(x) : x), 0)
 function destroyChart(id) {
   if (chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; }
 }
+function findNE(neId) {
+  return appData ? appData.network_elements.find(function(ne) { return ne.id === neId; }) : null;
+}
+function findNodeInNE(neId, nodeId) {
+  var ne = findNE(neId);
+  return ne ? ne.nodes.find(function(n) { return n.id === nodeId; }) : null;
+}
+function findEntityPath(neId, nodeId, podId, ctrId) {
+  var ne = findNE(neId);
+  if (!ne) return null;
+  var node = nodeId ? ne.nodes.find(function(n) { return n.id === nodeId; }) : null;
+  if (!node) return { ne: ne, node: null, pod: null, ctr: null };
+  var pod = podId ? node.pods.find(function(p) { return p.id === podId; }) : null;
+  if (!pod) return { ne: ne, node: node, pod: null, ctr: null };
+  var ctr = ctrId ? pod.containers.find(function(c) { return c.id === ctrId; }) : null;
+  return { ne: ne, node: node, pod: pod, ctr: ctr || null };
+}
+function renderNodePageById(neId) {
+  var ne = findNE(neId);
+  if (ne) renderNodePage(ne);
+}
+function renderNodeDetailById(neId, nodeId) {
+  var r = findEntityPath(neId, nodeId);
+  if (r && r.node) renderNodeDetail(r.ne, r.node);
+}
+function renderPodPageById(neId, nodeId, podId) {
+  var r = findEntityPath(neId, nodeId, podId);
+  if (r && r.pod) renderPodPage(r.ne, r.node, r.pod);
+}
+function renderContainerPageById(neId, nodeId, podId, ctrId) {
+  var r = findEntityPath(neId, nodeId, podId, ctrId);
+  if (r && r.ctr) renderContainerPage(r.ne, r.node, r.pod, r.ctr);
+}
+function renderProcessPageById(neId, nodeId, podId, ctrId, procId) {
+  var r = findEntityPath(neId, nodeId, podId, ctrId);
+  if (!r || !r.ctr) return;
+  var proc = r.ctr.processes.find(function(p) { return p.id === procId; });
+  if (proc) renderProcessPage(r.ne, r.node, r.pod, r.ctr, proc);
+}
 
 // ── CSV Export ──
 function exportToCSV(filename, headers, rows) {
@@ -777,11 +828,15 @@ function buildNavTree() {
         const podResult = addNavItem(nodeResult.childrenEl, 'pod-'+pod.id, 'pod', '◈ ' + pod.name.substring(0, 18), pod, 3, null, () => renderPodPage(ne, node, pod), true);
 
         pod.containers.forEach(ctr => {
-          const ctrResult = addNavItem(podResult.childrenEl, 'ctr-'+ctr.id, 'container', '▣ ' + ctr.name, ctr, 4, null, () => renderContainerPage(ne, node, pod, ctr), true);
-
-          ctr.processes.forEach(proc => {
-            addNavItem(ctrResult.childrenEl, 'proc-'+proc.id, 'process', '⬤ ' + proc.name, proc, 5, null, () => renderProcessPage(ne, node, pod, ctr, proc), false);
-          });
+          var ctrResult = addNavItem(podResult.childrenEl, 'ctr-'+ctr.id, 'container', '▣ ' + ctr.name, ctr, 4, null, function() { renderContainerPage(ne, node, pod, ctr); }, true);
+          // Lazy-load processes: only create nav DOM when container is expanded
+          if (ctr.processes && ctr.processes.length > 0) {
+            makeLazyChildren(ctrResult, podResult.childrenEl, ctr, function(ctrEl) {
+              ctr.processes.forEach(function(proc) {
+                addNavItem(ctrEl, 'proc-'+proc.id, 'process', '⬤ ' + proc.name, proc, 5, null, function() { renderProcessPage(ne, node, pod, ctr, proc); }, false);
+              });
+            });
+          }
         });
       });
     });
@@ -810,8 +865,13 @@ function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn,
       e.stopPropagation();
       var children = el.nextElementSibling;
       if (children && children.classList.contains('nav-children')) {
+        var wasCollapsed = children.classList.contains('collapsed');
         children.classList.toggle('collapsed');
         toggle.classList.toggle('collapsed');
+        if (wasCollapsed && children._lazyBuilder) {
+          children._lazyBuilder(children);
+          children._lazyBuilder = null;
+        }
       }
     });
   }
@@ -833,16 +893,34 @@ function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn,
   return { itemEl: el, childrenEl: childrenEl };
 }
 
+function makeLazyChildren(result, parent, data, builder) {
+  var childrenEl = document.createElement('div');
+  childrenEl.className = 'nav-children collapsed';
+  childrenEl._lazyBuilder = builder;
+  parent.insertBefore(childrenEl, result.itemEl.nextSibling);
+  result.childrenEl = childrenEl;
+  // Start collapsed
+  var toggle = result.itemEl.querySelector('.nav-toggle');
+  if (toggle) toggle.classList.add('collapsed');
+}
+
 // ── NE Overview ──
 function renderNEOverview() {
   if (!appData) return;
   const nes = appData.network_elements;
   const allNodes = nes.flatMap(ne => ne.nodes);
-  const totalMem = sum(allNodes, n => n.mem_total_kb) * 1024;
-  const usedMem = sum(allNodes, n => n.mem_used_kb) * 1024;
+  const agg = allNodes.reduce(function(acc, n) {
+    acc.totalMem += n.mem_total_kb;
+    acc.usedMem += n.mem_used_kb;
+    acc.hotMem += n.mem_hot_kb;
+    acc.coldMem += n.mem_cold_kb;
+    return acc;
+  }, { totalMem: 0, usedMem: 0, hotMem: 0, coldMem: 0 });
+  const totalMem = agg.totalMem * 1024;
+  const usedMem = agg.usedMem * 1024;
   const freeMem = totalMem - usedMem;
-  const hotMem = sum(allNodes, n => n.mem_hot_kb) * 1024;
-  const coldMem = sum(allNodes, n => n.mem_cold_kb) * 1024;
+  const hotMem = agg.hotMem * 1024;
+  const coldMem = agg.coldMem * 1024;
   const usePct = pct(usedMem, totalMem);
 
   document.getElementById('ne-overview-meta').textContent =
@@ -1093,6 +1171,19 @@ function drawFlameChart() {
   const hitmap = [];
   let y = PAD;
 
+  // Pre-compute derived totals for nested levels
+  var nodePodTotalCache = {};
+  var podCtrTotalCache = {};
+  nes.forEach(function(ne) {
+    ne.nodes.forEach(function(node) {
+      var npt = sum(node.pods, function(p) { return p.working_set_bytes / 1024; }) || node.mem_used_kb;
+      nodePodTotalCache[node.id] = npt;
+      node.pods.forEach(function(pod) {
+        podCtrTotalCache[pod.id] = sum(pod.containers, function(c) { return c.usage_bytes; }) || 1;
+      });
+    });
+  });
+
   // Level 0: NEs — width based on used memory
   const neTotals = nes.map(ne => sum(ne.nodes, n => n.mem_used_kb));
   const grandTotal = sum(neTotals);
@@ -1173,9 +1264,9 @@ function drawFlameChart() {
   xOff = 0;
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, nii) => {
-      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_used_kb;
+      const nodePodTotal = nodePodTotalCache[node.id];
       node.pods.forEach((pod, pi) => {
-        const ctrTotal = sum(pod.containers, c => c.usage_bytes) || 1;
+        const ctrTotal = podCtrTotalCache[pod.id];
         const podWidth = (node.mem_used_kb / grandTotal) * (pod.working_set_bytes / 1024) / nodePodTotal;
         pod.containers.forEach((ctr, i) => {
           const frac = podWidth * ctr.usage_bytes / ctrTotal;
@@ -1204,17 +1295,17 @@ function drawFlameChart() {
   nes.forEach((ne, ni) => {
     ne.nodes.forEach((node, nii) => {
       const nodeShare = node.mem_used_kb / grandTotal;
-      const nodePodTotal = sum(node.pods, p => p.working_set_bytes / 1024) || node.mem_used_kb;
+      const nodePodTotal = nodePodTotalCache[node.id];
       node.pods.forEach((pod, pi) => {
         const podShare = nodeShare * (pod.working_set_bytes / 1024) / nodePodTotal;
-        const podCtrTotal = sum(pod.containers, c => c.usage_bytes) || 1;
+        const podCtrTotal = podCtrTotalCache[pod.id];
         pod.containers.forEach((ctr, ci) => {
           const ctrShare = podShare * ctr.usage_bytes / podCtrTotal;
           const procTotal = sum(ctr.processes, p => p.vm_rss_kb * 1024) || 1;
           ctr.processes.forEach((proc, i) => {
             const frac = procTotal > 0 ? ctrShare * (proc.vm_rss_kb * 1024) / procTotal : 0;
             const bw = frac * (W - PAD*2);
-            if (bw < 0.5) return;
+            if (bw < 1.5) { xOff += frac; return; }
             const pal = palette[(ni * 11 + nii * 7 + pi * 5 + ci * 3 + i) % palette.length];
             ctx.fillStyle = adjustBrightness(pal[2], -25);
             ctx.fillRect(PAD + xOff*(W-PAD*2), y, Math.max(bw - GAP, 0.5), ROW_H - GAP);
@@ -1286,10 +1377,17 @@ function renderNodePage(ne) {
   const page = document.getElementById('page-node');
   page.classList.add('active');
   
-  const totalMem = sum(ne.nodes, n => n.mem_total_kb) * 1024;
-  const usedMem = sum(ne.nodes, n => n.mem_used_kb) * 1024;
-  const hotMem = sum(ne.nodes, n => n.mem_hot_kb) * 1024;
-  const coldMem = sum(ne.nodes, n => n.mem_cold_kb) * 1024;
+  const nodeAgg = ne.nodes.reduce(function(acc, n) {
+    acc.totalMem += n.mem_total_kb;
+    acc.usedMem += n.mem_used_kb;
+    acc.hotMem += n.mem_hot_kb;
+    acc.coldMem += n.mem_cold_kb;
+    return acc;
+  }, { totalMem: 0, usedMem: 0, hotMem: 0, coldMem: 0 });
+  const totalMem = nodeAgg.totalMem * 1024;
+  const usedMem = nodeAgg.usedMem * 1024;
+  const hotMem = nodeAgg.hotMem * 1024;
+  const coldMem = nodeAgg.coldMem * 1024;
 
   page.innerHTML = `
     <div class="page-header">
@@ -1462,7 +1560,7 @@ function renderNodeDetail(ne, node) {
       <div>
         <div class="breadcrumb">
           <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
-          <span onclick="renderNodePage(${JSON.stringify(ne).replace(/"/g,'&quot;')})" style="cursor:pointer;color:var(--accent)">${ne.name}</span><span class="sep">›</span>
+          <span onclick="renderNodePageById('${ne.id}')" style="cursor:pointer;color:var(--accent)">${ne.name}</span><span class="sep">›</span>
           <span>${node.name}</span>
         </div>
         <div class="page-title">${node.name}</div>
@@ -1583,8 +1681,8 @@ function renderPodPage(ne, node, pod) {
       <div>
         <div class="breadcrumb">
           <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePage(window._ne_${ne.id}||appData.network_elements.find(x=>x.id=='${ne.id}'))">${ne.name}</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetail(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'))">${node.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePageById('${ne.id}')">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetailById('${ne.id}','${node.id}')">${node.name}</span><span class="sep">›</span>
           <span>${pod.name}</span>
         </div>
         <div class="page-title">${pod.name}</div>
@@ -1777,9 +1875,9 @@ function renderContainerPage(ne, node, pod, ctr) {
       <div>
         <div class="breadcrumb">
           <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePage(appData.network_elements.find(x=>x.id=='${ne.id}'))">${ne.name}</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetail(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'))">${node.name}</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderPodPage(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}'))">${pod.name.substring(0,20)}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePageById('${ne.id}')">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetailById('${ne.id}','${node.id}')">${node.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderPodPageById('${ne.id}','${node.id}','${pod.id}')">${pod.name.substring(0,20)}</span><span class="sep">›</span>
           <span>${ctr.name}</span>
         </div>
         <div class="page-title">${ctr.name}</div>
@@ -1961,7 +2059,7 @@ function renderProcessPage(ne, node, pod, ctr, proc) {
         <div class="breadcrumb">
           <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
           <span>…</span><span class="sep">›</span>
-          <span style="cursor:pointer;color:var(--accent)" onclick="renderContainerPage(appData.network_elements.find(x=>x.id=='${ne.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}'),appData.network_elements.find(x=>x.id=='${ne.id}').nodes.find(x=>x.id=='${node.id}').pods.find(x=>x.id=='${pod.id}').containers.find(x=>x.id=='${ctr.id}'))">${ctr.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderContainerPageById('${ne.id}','${node.id}','${pod.id}','${ctr.id}')">${ctr.name}</span><span class="sep">›</span>
           <span>${proc.name}</span>
         </div>
         <div class="page-title">${proc.name}</div>
