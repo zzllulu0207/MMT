@@ -119,6 +119,13 @@ def build_container_original_info(cgroup_stat_raw, requests, limits):
     return "\n".join(lines)
 
 
+def build_module_original_info(raw_data):
+    """构造 Module 级别的 original_info。"""
+    if raw_data:
+        return raw_data.strip()
+    return "# module data (no data)"
+
+
 def build_process_original_info(raw_status, raw_smaps):
     """构造 Process 级别的 original_info。"""
     parts = []
@@ -131,9 +138,35 @@ def build_process_original_info(raw_status, raw_smaps):
 
 # ── Transform Pipeline ──
 
+def transform_module(raw_mod):
+    """将 collector 的模块原始数据转换为目标格式（进程下的叶子节点）。"""
+    mod_type = raw_mod.get("type", "pt")
+    base = {
+        "id": next_id("mod"),
+        "type": mod_type,
+        "original_info": build_module_original_info(raw_mod.get("raw_data", "")),
+    }
+    if mod_type == "arena":
+        base.update({
+            "system_bytes": raw_mod.get("system_bytes", 0),
+            "in_use_bytes": raw_mod.get("in_use_bytes", 0),
+            "max_mmap_regions": raw_mod.get("max_mmap_regions", 0),
+            "max_mmap_bytes": raw_mod.get("max_mmap_bytes", 0),
+        })
+    else:
+        base.update({
+            "pt_no": raw_mod.get("pt_no", 0),
+            "pt_name": raw_mod.get("pt_name", "unknown"),
+            "total_size": raw_mod.get("total_size", 0),
+            "free_size": raw_mod.get("free_size", 0),
+            "used_percent": raw_mod.get("used_percent", 0),
+        })
+    return base
+
+
 def transform_process(raw_proc):
     """将 collector 的进程原始数据转换为目标格式。"""
-    return {
+    result = {
         "id": next_id("proc"),
         "pid": raw_proc.get("pid", 0),
         "name": raw_proc.get("name", "unknown"),
@@ -150,12 +183,14 @@ def transform_process(raw_proc):
             raw_proc.get("raw_smaps", "")
         ),
     }
+    raw_modules = raw_proc.get("modules")
+    if raw_modules:
+        result["modules"] = [transform_module(m) for m in raw_modules]
+    return result
 
 
 def transform_container(raw_ctr):
     """将 collector 的容器原始数据转换为目标格式。"""
-    processes = [transform_process(p) for p in raw_ctr.get("processes", [])]
-
     return {
         "id": next_id("ctr"),
         "name": raw_ctr.get("name", "unknown"),
@@ -172,7 +207,7 @@ def transform_container(raw_ctr):
             raw_ctr.get("requests_memory_bytes", 0),
             raw_ctr.get("limits_memory_bytes", 0),
         ),
-        "processes": processes,
+        "processes": [transform_process(p) for p in raw_ctr.get("processes", [])],
     }
 
 
@@ -325,8 +360,19 @@ def main():
     output = {"network_elements": network_elements}
 
     tz = datetime.now(timezone(timedelta(hours=8))).astimezone().tzinfo
+    total_modules = 0
+    total_processes = 0
+    for ne in network_elements:
+        for n in ne["nodes"]:
+            for p in n["pods"]:
+                for c in p["containers"]:
+                    procs = c.get("processes", [])
+                    total_processes += len(procs)
+                    for proc in procs:
+                        total_modules += len(proc.get("modules", []))
+
     output["_metadata"] = {
-        "processor_version": "1.0.0",
+        "processor_version": "1.1.0",
         "processed_at": datetime.now(tz).isoformat(),
         "source_files": len(raw_docs),
         "network_elements": len(network_elements),
@@ -336,11 +382,8 @@ def main():
             len(p["containers"])
             for ne in network_elements for n in ne["nodes"] for p in n["pods"]
         ),
-        "total_processes": sum(
-            len(c["processes"])
-            for ne in network_elements for n in ne["nodes"]
-            for p in n["pods"] for c in p["containers"]
-        ),
+        "total_modules": total_modules,
+        "total_processes": total_processes,
     }
 
     with open(args.output, "w", encoding="utf-8") as f:
@@ -353,6 +396,7 @@ def main():
     print(f"  节点:   {output['_metadata']['total_nodes']}")
     print(f"  Pods:   {output['_metadata']['total_pods']}")
     print(f"  容器:   {output['_metadata']['total_containers']}")
+    print(f"  模块:   {output['_metadata']['total_modules']}")
     print(f"  进程:   {output['_metadata']['total_processes']}")
     print(f"  输出:   {args.output}")
     print(f"══════════════════════════════════════════════")

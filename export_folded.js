@@ -75,7 +75,7 @@ function exportFolded(inputPath, outputPath, verbose, quiet) {
     warn("[WARN] 'network_elements' is empty or missing. Nothing to export.");
     if (data._metadata) {
       const m = data._metadata;
-      log(`[INFO] Metadata: NEs=${m.network_elements}, Nodes=${m.total_nodes}, Pods=${m.total_pods}, Containers=${m.total_containers}, Procs=${m.total_processes}`);
+      log(`[INFO] Metadata: NEs=${m.network_elements}, Nodes=${m.total_nodes}, Pods=${m.total_pods}, Containers=${m.total_containers}, Modules=${m.total_modules || 0}, Procs=${m.total_processes}`);
     }
     return 1;
   }
@@ -121,22 +121,34 @@ function exportFolded(inputPath, outputPath, verbose, quiet) {
         for (const ctr of containers) {
           const ctrName = ctr.name || 'unknown-ctr';
           const ctrVal = ctr.rss_bytes || 0;
-          const procs = ctr.processes || [];
 
           lines.push(`${neName};${nodeName};${podName};${ctrName} ${ctrVal}`);
           stats.container++;
+
+          const procs = ctr.processes || [];
           if (verbose) {
             log(`        Container: ${ctrName}  rss_bytes=${ctrVal.toLocaleString()}  processes=${procs.length}`);
           }
-
           for (const proc of procs) {
             const procName = proc.name || 'unknown-proc';
             const procVal = proc.vm_rss_kb || 0;
-
             lines.push(`${neName};${nodeName};${podName};${ctrName};${procName} ${procVal}`);
             stats.process++;
             if (verbose) {
               log(`          Process: ${procName}  vm_rss_kb=${procVal.toLocaleString()}`);
+            }
+
+            const modules = proc.modules;
+            if (modules && modules.length > 0) {
+              for (const mod of modules) {
+                const modName = mod.type === 'arena' ? 'Arena' : (mod.pt_name || `PT-${mod.pt_no || '?'}`);
+                const modVal = mod.type === 'arena' ? (mod.in_use_bytes || 0) : Math.floor((mod.total_size || 0) * (mod.used_percent || 0) / 100);
+                lines.push(`${neName};${nodeName};${podName};${ctrName};${procName};${modName} ${modVal}`);
+                stats.module = (stats.module || 0) + 1;
+                if (verbose) {
+                  log(`            Module: ${modName}  type=${mod.type}`);
+                }
+              }
             }
           }
         }
@@ -153,7 +165,7 @@ function exportFolded(inputPath, outputPath, verbose, quiet) {
 
   const outSize = fs.statSync(outputPath).size;
   log(`\n[INFO] Wrote ${lines.length.toLocaleString()} lines (${outSize.toLocaleString()} bytes) → ${path.resolve(outputPath)}`);
-  log(`[INFO] Breakdown: NE=${stats.ne}  Node=${stats.node}  Pod=${stats.pod}  Container=${stats.container}  Process=${stats.process}`);
+  log(`[INFO] Breakdown: NE=${stats.ne}  Node=${stats.node}  Pod=${stats.pod}  Container=${stats.container}  Module=${stats.module || 0}  Process=${stats.process}`);
   return 0;
 }
 

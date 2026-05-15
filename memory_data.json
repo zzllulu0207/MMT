@@ -56,7 +56,28 @@
                       "vm_pss_kb": 42496,
                       "vm_uss_kb": 40960,
                       "vm_swap_kb": 0,
-                      "original_info": "# /proc/1234/status\nName:   nginx\nUmask:  0022\nState:  S (sleeping)\nTgid:   1234\nNgid:   0\nPid:    1234\nPPid:   1\nTracerPid:      0\nUid:    101     101     101     101\nGid:    101     101     101     101\nFDSize: 256\nGroups: 101\nVmPeak:    61440 kB\nVmSize:    58368 kB\nVmLck:         0 kB\nVmPin:         0 kB\nVmHWM:     56320 kB\nVmRSS:     51200 kB\nRssAnon:   30720 kB\nRssFile:   18432 kB\nRssShmem:   2048 kB\nVmData:    40960 kB\nVmStk:       132 kB\nVmExe:      1024 kB\nVmLib:      4096 kB\nVmPTE:       128 kB\nVmSwap:        0 kB\nThreads:        1\nvoluntary_ctxt_switches:        15234\nnonvoluntary_ctxt_switches:     2567\n# /proc/1234/smaps_rollup (summary)\nRss:           51200 kB\nPss:           42496 kB\nShared_Clean:   2048 kB\nShared_Dirty:   1024 kB\nPrivate_Clean: 13312 kB\nPrivate_Dirty: 34816 kB\nReferenced:    51200 kB\nAnonymous:     30720 kB\nSwap:              0 kB\nSwapPss:           0 kB\nLocked:            0 kB"
+                      "original_info": "# /proc/1234/status\nName:   nginx\nUmask:  0022\nState:  S (sleeping)\nTgid:   1234\nNgid:   0\nPid:    1234\nPPid:   1\nTracerPid:      0\nUid:    101     101     101     101\nGid:    101     101     101     101\nFDSize: 256\nGroups: 101\nVmPeak:    61440 kB\nVmSize:    58368 kB\nVmLck:         0 kB\nVmPin:         0 kB\nVmHWM:     56320 kB\nVmRSS:     51200 kB\nRssAnon:   30720 kB\nRssFile:   18432 kB\nRssShmem:   2048 kB\nVmData:    40960 kB\nVmStk:       132 kB\nVmExe:      1024 kB\nVmLib:      4096 kB\nVmPTE:       128 kB\nVmSwap:        0 kB\nThreads:        1\nvoluntary_ctxt_switches:        15234\nnonvoluntary_ctxt_switches:     2567\n# /proc/1234/smaps_rollup (summary)\nRss:           51200 kB\nPss:           42496 kB\nShared_Clean:   2048 kB\nShared_Dirty:   1024 kB\nPrivate_Clean: 13312 kB\nPrivate_Dirty: 34816 kB\nReferenced:    51200 kB\nAnonymous:     30720 kB\nSwap:              0 kB\nSwapPss:           0 kB\nLocked:            0 kB",
+                      "modules": [
+                        {
+                          "id": "mod-001",
+                          "type": "arena",
+                          "system_bytes": 134217728,
+                          "in_use_bytes": 58720256,
+                          "max_mmap_regions": 1024,
+                          "max_mmap_bytes": 1073741824,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 134217728\nin_use_bytes: 58720256\nlarge.allocated: 41943040\nmapped: 134217728\nretained: 16777216\nbase: 1048576\ninternal: 2097152\nmetadata_thp: 0\ndirty_decay_ms: 10000\nmuzzy_decay_ms: 10000\n# max_mmap_regions: 1024\n# max_mmap_bytes: 1073741824"
+                        },
+                        {
+                          "id": "mod-003",
+                          "type": "pt",
+                          "pt_no": 2,
+                          "pt_name": "nginx-pt-cache",
+                          "total_size": 33554432,
+                          "free_size": 10485760,
+                          "used_percent": 68.8,
+                          "original_info": "# PT: nginx-pt-cache\nTotal_size: 33554432\nFree_size: 10485760\nUsed_percent: 68.8%\nPage_count: 8192\nPage_size: 4096\nRegion_count: 4\nRegion_type: data"
+                        }
+                      ]
                     },
                     {
                       "id": "proc-002",
@@ -70,7 +91,19 @@
                       "vm_pss_kb": 22528,
                       "vm_uss_kb": 21504,
                       "vm_swap_kb": 512,
-                      "original_info": "# /proc/1235/status\nName:   nginx\nState:  S (sleeping)\nPid:    1235\nPPid:   1234\nVmPeak:    30720 kB\nVmHWM:     28672 kB\nVmRSS:     26624 kB\nRssAnon:   15360 kB\nRssFile:   10240 kB\nRssShmem:   1024 kB\nVmSwap:      512 kB\nThreads:        1"
+                      "original_info": "# /proc/1235/status\nName:   nginx\nState:  S (sleeping)\nPid:    1235\nPPid:   1234\nVmPeak:    30720 kB\nVmHWM:     28672 kB\nVmRSS:     26624 kB\nRssAnon:   15360 kB\nRssFile:   10240 kB\nRssShmem:   1024 kB\nVmSwap:      512 kB\nThreads:        1",
+                      "modules": [
+                        {
+                          "id": "mod-002",
+                          "type": "pt",
+                          "pt_no": 1,
+                          "pt_name": "nginx-pt-main",
+                          "total_size": 67108864,
+                          "free_size": 33554432,
+                          "used_percent": 50,
+                          "original_info": "# PT: nginx-pt-main\nTotal_size: 67108864\nFree_size: 33554432\nUsed_percent: 50.0%\nPage_count: 16384\nPage_size: 4096\nRegion_count: 8\nRegion_type: mixed"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -99,7 +132,28 @@
                       "vm_pss_kb": 32768,
                       "vm_uss_kb": 30720,
                       "vm_swap_kb": 0,
-                      "original_info": "# /proc/2100/status\nName:   nginx-exporter\nState:  S (sleeping)\nPid:    2100\nVmPeak:    43008 kB\nVmHWM:     40960 kB\nVmRSS:     38912 kB\nRssAnon:   22528 kB\nRssFile:   14336 kB\nVmSwap:        0 kB"
+                      "original_info": "# /proc/2100/status\nName:   nginx-exporter\nState:  S (sleeping)\nPid:    2100\nVmPeak:    43008 kB\nVmHWM:     40960 kB\nVmRSS:     38912 kB\nRssAnon:   22528 kB\nRssFile:   14336 kB\nVmSwap:        0 kB",
+                      "modules": [
+                        {
+                          "id": "mod-004",
+                          "type": "arena",
+                          "system_bytes": 67108864,
+                          "in_use_bytes": 28311552,
+                          "max_mmap_regions": 512,
+                          "max_mmap_bytes": 268435456,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 67108864\nin_use_bytes: 28311552\nlarge.allocated: 20971520\nmapped: 67108864\nretained: 8388608\n# max_mmap_regions: 512\n# max_mmap_bytes: 268435456"
+                        },
+                        {
+                          "id": "mod-005",
+                          "type": "pt",
+                          "pt_no": 1,
+                          "pt_name": "exporter-pt-main",
+                          "total_size": 33554432,
+                          "free_size": 18874368,
+                          "used_percent": 43.8,
+                          "original_info": "# PT: exporter-pt-main\nTotal_size: 33554432\nFree_size: 18874368\nUsed_percent: 43.8%\nPage_count: 8192\nPage_size: 4096\nRegion_count: 3\nRegion_type: mixed"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -144,7 +198,38 @@
                       "vm_pss_kb": 319488,
                       "vm_uss_kb": 307200,
                       "vm_swap_kb": 1024,
-                      "original_info": "# /proc/3000/status\nName:   api-server\nPid:    3000\nVmPeak:   393216 kB\nVmHWM:    376832 kB\nVmRSS:    342016 kB\nRssAnon:  204800 kB\nRssFile:  122880 kB\nVmSwap:     1024 kB\nThreads:       8"
+                      "original_info": "# /proc/3000/status\nName:   api-server\nPid:    3000\nVmPeak:   393216 kB\nVmHWM:    376832 kB\nVmRSS:    342016 kB\nRssAnon:  204800 kB\nRssFile:  122880 kB\nVmSwap:     1024 kB\nThreads:       8",
+                      "modules": [
+                        {
+                          "id": "mod-006",
+                          "type": "arena",
+                          "system_bytes": 536870912,
+                          "in_use_bytes": 262144000,
+                          "max_mmap_regions": 2048,
+                          "max_mmap_bytes": 2147483648,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 536870912\nin_use_bytes: 262144000\nlarge.allocated: 188743680\nmapped: 536870912\nretained: 67108864\n# max_mmap_regions: 2048\n# max_mmap_bytes: 2147483648"
+                        },
+                        {
+                          "id": "mod-007",
+                          "type": "pt",
+                          "pt_no": 1,
+                          "pt_name": "api-pt-heap",
+                          "total_size": 268435456,
+                          "free_size": 104857600,
+                          "used_percent": 60.9,
+                          "original_info": "# PT: api-pt-heap\nTotal_size: 268435456\nFree_size: 104857600\nUsed_percent: 60.9%\nPage_count: 65536\nPage_size: 4096\nRegion_count: 12\nRegion_type: heap"
+                        },
+                        {
+                          "id": "mod-008",
+                          "type": "pt",
+                          "pt_no": 2,
+                          "pt_name": "api-pt-stack",
+                          "total_size": 134217728,
+                          "free_size": 67108864,
+                          "used_percent": 50,
+                          "original_info": "# PT: api-pt-stack\nTotal_size: 134217728\nFree_size: 67108864\nUsed_percent: 50.0%\nPage_count: 32768\nPage_size: 4096\nRegion_count: 256\nRegion_type: stack"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -202,7 +287,28 @@
                       "vm_pss_kb": 184320,
                       "vm_uss_kb": 174080,
                       "vm_swap_kb": 2048,
-                      "original_info": "# /proc/4000/status\nName:   redis-server\nPid:    4000\nVmPeak:   227328 kB\nVmHWM:    215040 kB\nVmRSS:    196608 kB\nRssAnon:  122880 kB\nRssFile:   61440 kB\nVmSwap:     2048 kB\nThreads:       4"
+                      "original_info": "# /proc/4000/status\nName:   redis-server\nPid:    4000\nVmPeak:   227328 kB\nVmHWM:    215040 kB\nVmRSS:    196608 kB\nRssAnon:  122880 kB\nRssFile:   61440 kB\nVmSwap:     2048 kB\nThreads:       4",
+                      "modules": [
+                        {
+                          "id": "mod-009",
+                          "type": "arena",
+                          "system_bytes": 268435456,
+                          "in_use_bytes": 157286400,
+                          "max_mmap_regions": 4096,
+                          "max_mmap_bytes": 4294967296,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 268435456\nin_use_bytes: 157286400\nlarge.allocated: 125829120\nmapped: 268435456\nretained: 33554432\n# max_mmap_regions: 4096\n# max_mmap_bytes: 4294967296"
+                        },
+                        {
+                          "id": "mod-010",
+                          "type": "pt",
+                          "pt_no": 1,
+                          "pt_name": "redis-pt-main",
+                          "total_size": 134217728,
+                          "free_size": 41943040,
+                          "used_percent": 68.8,
+                          "original_info": "# PT: redis-pt-main\nTotal_size: 134217728\nFree_size: 41943040\nUsed_percent: 68.8%\nPage_count: 32768\nPage_size: 4096\nRegion_count: 8\nRegion_type: mixed"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -268,7 +374,38 @@
                       "vm_pss_kb": 40960,
                       "vm_uss_kb": 38912,
                       "vm_swap_kb": 0,
-                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmHWM:     51200 kB\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB\nVmSwap:        0 kB\nThreads:       6"
+                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmHWM:     51200 kB\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB\nVmSwap:        0 kB\nThreads:       6",
+                      "modules": [
+                        {
+                          "id": "mod-011",
+                          "type": "arena",
+                          "system_bytes": 67108864,
+                          "in_use_bytes": 39845888,
+                          "max_mmap_regions": 1024,
+                          "max_mmap_bytes": 536870912,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 67108864\nin_use_bytes: 39845888\nlarge.allocated: 29360128\nmapped: 67108864\nretained: 8388608\n# max_mmap_regions: 1024\n# max_mmap_bytes: 536870912"
+                        },
+                        {
+                          "id": "mod-012",
+                          "type": "pt",
+                          "pt_no": 1,
+                          "pt_name": "envoy-pt-main",
+                          "total_size": 33554432,
+                          "free_size": 12582912,
+                          "used_percent": 62.5,
+                          "original_info": "# PT: envoy-pt-main\nTotal_size: 33554432\nFree_size: 12582912\nUsed_percent: 62.5%\nPage_count: 8192\nPage_size: 4096\nRegion_count: 6\nRegion_type: mixed"
+                        },
+                        {
+                          "id": "mod-013",
+                          "type": "pt",
+                          "pt_no": 2,
+                          "pt_name": "envoy-pt-worker",
+                          "total_size": 16777216,
+                          "free_size": 8388608,
+                          "used_percent": 50,
+                          "original_info": "# PT: envoy-pt-worker\nTotal_size: 16777216\nFree_size: 8388608\nUsed_percent: 50.0%\nPage_count: 4096\nPage_size: 4096\nRegion_count: 2\nRegion_type: data"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -334,7 +471,318 @@
                       "vm_pss_kb": 40960,
                       "vm_uss_kb": 38912,
                       "vm_swap_kb": 0,
-                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB"
+                      "original_info": "# /proc/5000/status\nName:   envoy\nPid:    5000\nVmRSS:     47104 kB\nRssAnon:   28672 kB\nRssFile:   16384 kB",
+                      "modules": [
+                        {
+                          "id": "mod-011",
+                          "type": "arena",
+                          "system_bytes": 67108864,
+                          "in_use_bytes": 39845888,
+                          "max_mmap_regions": 1024,
+                          "max_mmap_bytes": 536870912,
+                          "original_info": "# jemalloc stats (arena 0)\nsystem_bytes: 67108864\nin_use_bytes: 39845888\nlarge.allocated: 29360128\nmapped: 67108864\nretained: 8388608\n# max_mmap_regions: 1024\n# max_mmap_bytes: 536870912"
+                        },
+                        {
+                          "id": "mod-014",
+                          "type": "pt",
+                          "pt_no": 14,
+                          "pt_name": "tcmalloc-main",
+                          "total_size": 63081256,
+                          "free_size": 38479567,
+                          "used_percent": 39,
+                          "original_info": "# PT memory stats for tcmalloc-main\npt_no: 14\npt_name: tcmalloc-main\ntotal_size: 63081256 bytes\nfree_size: 38479567 bytes\nused_percent: 39%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:00:00+08:00"
+                        },
+                        {
+                          "id": "mod-015",
+                          "type": "pt",
+                          "pt_no": 15,
+                          "pt_name": "tcmalloc-transfer",
+                          "total_size": 40037208,
+                          "free_size": 34031627,
+                          "used_percent": 15,
+                          "original_info": "# PT memory stats for tcmalloc-transfer\npt_no: 15\npt_name: tcmalloc-transfer\ntotal_size: 40037208 bytes\nfree_size: 34031627 bytes\nused_percent: 15%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:00:00+08:00"
+                        },
+                        {
+                          "id": "mod-016",
+                          "type": "pt",
+                          "pt_no": 16,
+                          "pt_name": "tcmalloc-render",
+                          "total_size": 66810569,
+                          "free_size": 42758765,
+                          "used_percent": 36,
+                          "original_info": "# PT memory stats for tcmalloc-render\npt_no: 16\npt_name: tcmalloc-render\ntotal_size: 66810569 bytes\nfree_size: 42758765 bytes\nused_percent: 36%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:01:00+08:00"
+                        },
+                        {
+                          "id": "mod-017",
+                          "type": "pt",
+                          "pt_no": 17,
+                          "pt_name": "tcmalloc-network",
+                          "total_size": 85550176,
+                          "free_size": 33364569,
+                          "used_percent": 61,
+                          "original_info": "# PT memory stats for tcmalloc-network\npt_no: 17\npt_name: tcmalloc-network\ntotal_size: 85550176 bytes\nfree_size: 33364569 bytes\nused_percent: 61%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:01:00+08:00"
+                        },
+                        {
+                          "id": "mod-018",
+                          "type": "pt",
+                          "pt_no": 18,
+                          "pt_name": "jemalloc-page",
+                          "total_size": 98501238,
+                          "free_size": 60085756,
+                          "used_percent": 39,
+                          "original_info": "# PT memory stats for jemalloc-page\npt_no: 18\npt_name: jemalloc-page\ntotal_size: 98501238 bytes\nfree_size: 60085756 bytes\nused_percent: 39%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:02:00+08:00"
+                        },
+                        {
+                          "id": "mod-019",
+                          "type": "pt",
+                          "pt_no": 19,
+                          "pt_name": "jemalloc-chunk",
+                          "total_size": 85121681,
+                          "free_size": 44263275,
+                          "used_percent": 48,
+                          "original_info": "# PT memory stats for jemalloc-chunk\npt_no: 19\npt_name: jemalloc-chunk\ntotal_size: 85121681 bytes\nfree_size: 44263275 bytes\nused_percent: 48%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:02:00+08:00"
+                        },
+                        {
+                          "id": "mod-020",
+                          "type": "pt",
+                          "pt_no": 20,
+                          "pt_name": "jemalloc-extent",
+                          "total_size": 84689107,
+                          "free_size": 71138850,
+                          "used_percent": 16,
+                          "original_info": "# PT memory stats for jemalloc-extent\npt_no: 20\npt_name: jemalloc-extent\ntotal_size: 84689107 bytes\nfree_size: 71138850 bytes\nused_percent: 16%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:03:00+08:00"
+                        },
+                        {
+                          "id": "mod-021",
+                          "type": "pt",
+                          "pt_no": 21,
+                          "pt_name": "jemalloc-arena",
+                          "total_size": 79391968,
+                          "free_size": 73834531,
+                          "used_percent": 7,
+                          "original_info": "# PT memory stats for jemalloc-arena\npt_no: 21\npt_name: jemalloc-arena\ntotal_size: 79391968 bytes\nfree_size: 73834531 bytes\nused_percent: 7%\nallocator: tcmalloc\ntimestamp: 2026-05-16T10:03:00+08:00"
+                        },
+                        {
+                          "id": "mod-022",
+                          "type": "pt",
+                          "pt_no": 22,
+                          "pt_name": "heap-profile",
+                          "total_size": 59747131,
+                          "free_size": 52577476,
+                          "used_percent": 12,
+                          "original_info": "# PT memory stats for heap-profile\npt_no: 22\npt_name: heap-profile\ntotal_size: 59747131 bytes\nfree_size: 52577476 bytes\nused_percent: 12%\nallocator: jemalloc\ntimestamp: 2026-05-16T10:04:00+08:00"
+                        },
+                        {
+                          "id": "mod-023",
+                          "type": "pt",
+                          "pt_no": 23,
+                          "pt_name": "heap-tracking",
+                          "total_size": 80591370,
+                          "free_size": 24177411,
+                          "used_percent": 70,
+                          "original_info": "# PT memory stats for heap-tracking\npt_no: 23\npt_name: heap-tracking\ntotal_size: 80591370 bytes\nfree_size: 24177411 bytes\nused_percent: 70%\nallocator: jemalloc\ntimestamp: 2026-05-16T10:04:00+08:00"
+                        },
+                        {
+                          "id": "mod-024",
+                          "type": "pt",
+                          "pt_no": 24,
+                          "pt_name": "heap-sampling",
+                          "total_size": 70532900,
+                          "free_size": 35266450,
+                          "used_percent": 50,
+                          "original_info": "# PT memory stats for heap-sampling\npt_no: 24\npt_name: heap-sampling\ntotal_size: 70532900 bytes\nfree_size: 35266450 bytes\nused_percent: 50%\nallocator: jemalloc\ntimestamp: 2026-05-16T10:05:00+08:00"
+                        },
+                        {
+                          "id": "mod-025",
+                          "type": "pt",
+                          "pt_no": 25,
+                          "pt_name": "heap-alloc",
+                          "total_size": 65504290,
+                          "free_size": 37992489,
+                          "used_percent": 42,
+                          "original_info": "# PT memory stats for heap-alloc\npt_no: 25\npt_name: heap-alloc\ntotal_size: 65504290 bytes\nfree_size: 37992489 bytes\nused_percent: 42%\nallocator: jemalloc\ntimestamp: 2026-05-16T10:05:00+08:00"
+                        },
+                        {
+                          "id": "mod-026",
+                          "type": "pt",
+                          "pt_no": 26,
+                          "pt_name": "buffer-pool",
+                          "total_size": 31838634,
+                          "free_size": 28336385,
+                          "used_percent": 11,
+                          "original_info": "# PT memory stats for buffer-pool\npt_no: 26\npt_name: buffer-pool\ntotal_size: 31838634 bytes\nfree_size: 28336385 bytes\nused_percent: 11%\nallocator: libc\ntimestamp: 2026-05-16T10:06:00+08:00"
+                        },
+                        {
+                          "id": "mod-027",
+                          "type": "pt",
+                          "pt_no": 27,
+                          "pt_name": "buffer-cache",
+                          "total_size": 36032800,
+                          "free_size": 4684264,
+                          "used_percent": 87,
+                          "original_info": "# PT memory stats for buffer-cache\npt_no: 27\npt_name: buffer-cache\ntotal_size: 36032800 bytes\nfree_size: 4684264 bytes\nused_percent: 87%\nallocator: libc\ntimestamp: 2026-05-16T10:06:00+08:00"
+                        },
+                        {
+                          "id": "mod-028",
+                          "type": "pt",
+                          "pt_no": 28,
+                          "pt_name": "buffer-io",
+                          "total_size": 56413638,
+                          "free_size": 53592957,
+                          "used_percent": 5,
+                          "original_info": "# PT memory stats for buffer-io\npt_no: 28\npt_name: buffer-io\ntotal_size: 56413638 bytes\nfree_size: 53592957 bytes\nused_percent: 5%\nallocator: libc\ntimestamp: 2026-05-16T10:07:00+08:00"
+                        },
+                        {
+                          "id": "mod-029",
+                          "type": "pt",
+                          "pt_no": 29,
+                          "pt_name": "buffer-stream",
+                          "total_size": 42556927,
+                          "free_size": 18299479,
+                          "used_percent": 57,
+                          "original_info": "# PT memory stats for buffer-stream\npt_no: 29\npt_name: buffer-stream\ntotal_size: 42556927 bytes\nfree_size: 18299479 bytes\nused_percent: 57%\nallocator: libc\ntimestamp: 2026-05-16T10:07:00+08:00"
+                        },
+                        {
+                          "id": "mod-030",
+                          "type": "pt",
+                          "pt_no": 30,
+                          "pt_name": "thread-stack",
+                          "total_size": 72566180,
+                          "free_size": 28300811,
+                          "used_percent": 61,
+                          "original_info": "# PT memory stats for thread-stack\npt_no: 30\npt_name: thread-stack\ntotal_size: 72566180 bytes\nfree_size: 28300811 bytes\nused_percent: 61%\nallocator: libc\ntimestamp: 2026-05-16T10:08:00+08:00"
+                        },
+                        {
+                          "id": "mod-031",
+                          "type": "pt",
+                          "pt_no": 31,
+                          "pt_name": "thread-local",
+                          "total_size": 53580831,
+                          "free_size": 21968141,
+                          "used_percent": 59,
+                          "original_info": "# PT memory stats for thread-local\npt_no: 31\npt_name: thread-local\ntotal_size: 53580831 bytes\nfree_size: 21968141 bytes\nused_percent: 59%\nallocator: libc\ntimestamp: 2026-05-16T10:08:00+08:00"
+                        },
+                        {
+                          "id": "mod-032",
+                          "type": "pt",
+                          "pt_no": 32,
+                          "pt_name": "thread-pool",
+                          "total_size": 92324325,
+                          "free_size": 36929730,
+                          "used_percent": 60,
+                          "original_info": "# PT memory stats for thread-pool\npt_no: 32\npt_name: thread-pool\ntotal_size: 92324325 bytes\nfree_size: 36929730 bytes\nused_percent: 60%\nallocator: libc\ntimestamp: 2026-05-16T10:09:00+08:00"
+                        },
+                        {
+                          "id": "mod-033",
+                          "type": "pt",
+                          "pt_no": 33,
+                          "pt_name": "thread-worker",
+                          "total_size": 44267130,
+                          "free_size": 8410755,
+                          "used_percent": 81,
+                          "original_info": "# PT memory stats for thread-worker\npt_no: 33\npt_name: thread-worker\ntotal_size: 44267130 bytes\nfree_size: 8410755 bytes\nused_percent: 81%\nallocator: libc\ntimestamp: 2026-05-16T10:09:00+08:00"
+                        },
+                        {
+                          "id": "mod-034",
+                          "type": "pt",
+                          "pt_no": 34,
+                          "pt_name": "route-table",
+                          "total_size": 81452259,
+                          "free_size": 76565124,
+                          "used_percent": 6,
+                          "original_info": "# PT memory stats for route-table\npt_no: 34\npt_name: route-table\ntotal_size: 81452259 bytes\nfree_size: 76565124 bytes\nused_percent: 6%\nallocator: libc\ntimestamp: 2026-05-16T10:10:00+08:00"
+                        },
+                        {
+                          "id": "mod-035",
+                          "type": "pt",
+                          "pt_no": 35,
+                          "pt_name": "route-cache",
+                          "total_size": 67872737,
+                          "free_size": 18325639,
+                          "used_percent": 73,
+                          "original_info": "# PT memory stats for route-cache\npt_no: 35\npt_name: route-cache\ntotal_size: 67872737 bytes\nfree_size: 18325639 bytes\nused_percent: 73%\nallocator: libc\ntimestamp: 2026-05-16T10:10:00+08:00"
+                        },
+                        {
+                          "id": "mod-036",
+                          "type": "pt",
+                          "pt_no": 36,
+                          "pt_name": "route-filter",
+                          "total_size": 30191044,
+                          "free_size": 18416537,
+                          "used_percent": 39,
+                          "original_info": "# PT memory stats for route-filter\npt_no: 36\npt_name: route-filter\ntotal_size: 30191044 bytes\nfree_size: 18416537 bytes\nused_percent: 39%\nallocator: libc\ntimestamp: 2026-05-16T10:11:00+08:00"
+                        },
+                        {
+                          "id": "mod-037",
+                          "type": "pt",
+                          "pt_no": 37,
+                          "pt_name": "route-match",
+                          "total_size": 67148083,
+                          "free_size": 43646254,
+                          "used_percent": 35,
+                          "original_info": "# PT memory stats for route-match\npt_no: 37\npt_name: route-match\ntotal_size: 67148083 bytes\nfree_size: 43646254 bytes\nused_percent: 35%\nallocator: libc\ntimestamp: 2026-05-16T10:11:00+08:00"
+                        },
+                        {
+                          "id": "mod-038",
+                          "type": "pt",
+                          "pt_no": 38,
+                          "pt_name": "filter-http",
+                          "total_size": 34922808,
+                          "free_size": 5587650,
+                          "used_percent": 84,
+                          "original_info": "# PT memory stats for filter-http\npt_no: 38\npt_name: filter-http\ntotal_size: 34922808 bytes\nfree_size: 5587650 bytes\nused_percent: 84%\nallocator: libc\ntimestamp: 2026-05-16T10:12:00+08:00"
+                        },
+                        {
+                          "id": "mod-039",
+                          "type": "pt",
+                          "pt_no": 39,
+                          "pt_name": "filter-tcp",
+                          "total_size": 95930005,
+                          "free_size": 13430201,
+                          "used_percent": 86,
+                          "original_info": "# PT memory stats for filter-tcp\npt_no: 39\npt_name: filter-tcp\ntotal_size: 95930005 bytes\nfree_size: 13430201 bytes\nused_percent: 86%\nallocator: libc\ntimestamp: 2026-05-16T10:12:00+08:00"
+                        },
+                        {
+                          "id": "mod-040",
+                          "type": "pt",
+                          "pt_no": 40,
+                          "pt_name": "filter-grpc",
+                          "total_size": 60154853,
+                          "free_size": 57147111,
+                          "used_percent": 5,
+                          "original_info": "# PT memory stats for filter-grpc\npt_no: 40\npt_name: filter-grpc\ntotal_size: 60154853 bytes\nfree_size: 57147111 bytes\nused_percent: 5%\nallocator: libc\ntimestamp: 2026-05-16T10:13:00+08:00"
+                        },
+                        {
+                          "id": "mod-041",
+                          "type": "pt",
+                          "pt_no": 41,
+                          "pt_name": "filter-auth",
+                          "total_size": 71713487,
+                          "free_size": 40159553,
+                          "used_percent": 44,
+                          "original_info": "# PT memory stats for filter-auth\npt_no: 41\npt_name: filter-auth\ntotal_size: 71713487 bytes\nfree_size: 40159553 bytes\nused_percent: 44%\nallocator: libc\ntimestamp: 2026-05-16T10:13:00+08:00"
+                        },
+                        {
+                          "id": "mod-042",
+                          "type": "pt",
+                          "pt_no": 42,
+                          "pt_name": "stats-counter",
+                          "total_size": 55285955,
+                          "free_size": 15480068,
+                          "used_percent": 72,
+                          "original_info": "# PT memory stats for stats-counter\npt_no: 42\npt_name: stats-counter\ntotal_size: 55285955 bytes\nfree_size: 15480068 bytes\nused_percent: 72%\nallocator: libc\ntimestamp: 2026-05-16T10:14:00+08:00"
+                        },
+                        {
+                          "id": "mod-043",
+                          "type": "pt",
+                          "pt_no": 43,
+                          "pt_name": "stats-gauge",
+                          "total_size": 47811507,
+                          "free_size": 44464702,
+                          "used_percent": 7,
+                          "original_info": "# PT memory stats for stats-gauge\npt_no: 43\npt_name: stats-gauge\ntotal_size: 47811507 bytes\nfree_size: 44464702 bytes\nused_percent: 7%\nallocator: libc\ntimestamp: 2026-05-16T10:14:00+08:00"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -344,5 +792,16 @@
         }
       ]
     }
-  ]
+  ],
+  "_metadata": {
+    "aggregator_version": "2.1.0",
+    "processed_at": "2026-05-15T22:22:08.072Z",
+    "source_files": 4,
+    "network_elements": 3,
+    "total_nodes": 4,
+    "total_pods": 5,
+    "total_containers": 6,
+    "total_modules": 44,
+    "total_processes": 7
+  }
 }

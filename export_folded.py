@@ -44,7 +44,8 @@ def export_folded(input_path: str, output_path: str, verbose: bool = False) -> i
             meta = data['_metadata']
             print(f"[INFO] Metadata: NEs={meta.get('network_elements')}, "
                   f"Nodes={meta.get('total_nodes')}, Pods={meta.get('total_pods')}, "
-                  f"Containers={meta.get('total_containers')}, Procs={meta.get('total_processes')}")
+                  f"Containers={meta.get('total_containers')}, Modules={meta.get('total_modules', 0)}, "
+                  f"Procs={meta.get('total_processes')}")
         return 1
 
     print(f"[INFO] Found {len(nes)} network element(s)")
@@ -85,23 +86,32 @@ def export_folded(input_path: str, output_path: str, verbose: bool = False) -> i
                 for ctr in containers:
                     ctr_name = ctr.get('name', 'unknown-ctr')
                     ctr_val = ctr.get('rss_bytes', 0)
-                    procs = ctr.get('processes', [])
 
                     lines.append(f"{ne_name};{node_name};{pod_name};{ctr_name} {ctr_val}")
                     stats['container'] += 1
+
+                    procs = ctr.get('processes', [])
                     if verbose:
                         print(f"        Container: {ctr_name}  rss_bytes={ctr_val:,}  processes={len(procs)}")
-
                     for proc in procs:
                         proc_name = proc.get('name', 'unknown-proc')
                         proc_val = proc.get('vm_rss_kb', 0)
-
                         lines.append(
                             f"{ne_name};{node_name};{pod_name};{ctr_name};{proc_name} {proc_val}"
                         )
                         stats['process'] += 1
                         if verbose:
                             print(f"          Process: {proc_name}  vm_rss_kb={proc_val:,}")
+
+                        modules = proc.get('modules')
+                        if modules:
+                            for mod in modules:
+                                mod_name = 'Arena' if mod.get('type') == 'arena' else mod.get('pt_name', f"PT-{mod.get('pt_no', '?')}")
+                                mod_val = mod.get('in_use_bytes', 0) if mod.get('type') == 'arena' else int((mod.get('total_size', 0) or 0) * (mod.get('used_percent', 0) or 0) / 100)
+                                lines.append(f"{ne_name};{node_name};{pod_name};{ctr_name};{proc_name};{mod_name} {mod_val}")
+                                stats['module'] = stats.get('module', 0) + 1
+                                if verbose:
+                                    print(f"            Module: {mod_name}  type={mod.get('type')}")
 
     output_dir = os.path.dirname(os.path.abspath(output_path))
     if output_dir and not os.path.exists(output_dir):
@@ -113,7 +123,8 @@ def export_folded(input_path: str, output_path: str, verbose: bool = False) -> i
     out_size = os.path.getsize(output_path)
     print(f"\n[INFO] Wrote {len(lines):,} lines ({out_size:,} bytes) → {os.path.abspath(output_path)}")
     print(f"[INFO] Breakdown: NE={stats['ne']}  Node={stats['node']}  "
-          f"Pod={stats['pod']}  Container={stats['container']}  Process={stats['process']}")
+          f"Pod={stats['pod']}  Container={stats['container']}  "
+          f"Module={stats.get('module', 0)}  Process={stats['process']}")
     return 0
 
 

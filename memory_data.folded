@@ -3,23 +3,67 @@ NE-Core-01;worker-node-01 43515904
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c 183500800
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx 104857600
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: master 51200
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: master;Arena 58720256
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: master;nginx-pt-cache 23085449
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: worker 26624
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx;nginx: worker;nginx-pt-main 33554432
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter 78643200
 NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter;nginx-exporter 38912
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter;nginx-exporter;Arena 28311552
+NE-Core-01;worker-node-01;nginx-proxy-7d4b9c;nginx-exporter;nginx-exporter;exporter-pt-main 14696841
 NE-Core-01;worker-node-01;api-server-5c8f2d 698351616
 NE-Core-01;worker-node-01;api-server-5c8f2d;api-server 698351616
 NE-Core-01;worker-node-01;api-server-5c8f2d;api-server;api-server 342016
+NE-Core-01;worker-node-01;api-server-5c8f2d;api-server;api-server;Arena 262144000
+NE-Core-01;worker-node-01;api-server-5c8f2d;api-server;api-server;api-pt-heap 163477192
+NE-Core-01;worker-node-01;api-server-5c8f2d;api-server;api-server;api-pt-stack 67108864
 NE-Core-01;worker-node-02 47185920
 NE-Core-01;worker-node-02;redis-cache-3a9d1e 402653184
 NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis 402653184
 NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis;redis-server 196608
+NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis;redis-server;Arena 157286400
+NE-Core-01;worker-node-02;redis-cache-3a9d1e;redis;redis-server;redis-pt-main 92341796
 NE-Edge-02 20185088
 NE-Edge-02;edge-node-01 20185088
 NE-Edge-02;edge-node-01;edge-proxy-8b2c4f 96468992
 NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy 96468992
 NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy 47104
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;Arena 39845888
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;envoy-pt-main 20971520
+NE-Edge-02;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;envoy-pt-worker 8388608
 NE-test-001 20185088
 NE-test-001;edge-node-01 20185088
 NE-test-001;edge-node-01;edge-proxy-8b2c4f 96468992
 NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy 96468992
 NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy 47104
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;Arena 39845888
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;tcmalloc-main 24601689
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;tcmalloc-transfer 6005581
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;tcmalloc-render 24051804
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;tcmalloc-network 52185607
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;jemalloc-page 38415482
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;jemalloc-chunk 40858406
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;jemalloc-extent 13550257
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;jemalloc-arena 5557437
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;heap-profile 7169655
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;heap-tracking 56413959
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;heap-sampling 35266450
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;heap-alloc 27511801
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;buffer-pool 3502249
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;buffer-cache 31348536
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;buffer-io 2820681
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;buffer-stream 24257448
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;thread-stack 44265369
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;thread-local 31612690
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;thread-pool 55394595
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;thread-worker 35856375
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;route-table 4887135
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;route-cache 49547098
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;route-filter 11774507
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;route-match 23501829
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;filter-http 29335158
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;filter-tcp 82499804
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;filter-grpc 3007742
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;filter-auth 31553934
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;stats-counter 39805887
+NE-test-001;edge-node-01;edge-proxy-8b2c4f;edge-proxy;envoy;stats-gauge 3346805

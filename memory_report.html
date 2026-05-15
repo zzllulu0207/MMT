@@ -114,6 +114,8 @@
   .nav-indent-2 { padding-left: 40px; }
   .nav-indent-3 { padding-left: 52px; }
   .nav-indent-4 { padding-left: 64px; }
+  .nav-indent-5 { padding-left: 76px; }
+  .nav-indent-6 { padding-left: 88px; }
   .nav-icon { width: 14px; height: 14px; opacity: 0.7; flex-shrink: 0; }
   .nav-badge {
     margin-left: auto; font-size: 10px;
@@ -357,6 +359,94 @@
   }
   .lang-btn:hover { color: var(--text); border-color: var(--text3); }
   .lang-btn.active { background: var(--blue-dim); color: #fff; border-color: var(--blue-dim); }
+
+  /* ── Polish: card depth ── */
+  .stat-card, .chart-card {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .stat-card:hover { border-color: var(--border2); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+
+  /* ── Polish: section title accent ── */
+  .section-title {
+    letter-spacing: 0.03em;
+  }
+  .section-title::before {
+    content: ''; width: 3px; height: 14px;
+    background: var(--accent); border-radius: 2px;
+    flex-shrink: 0; opacity: 0.7;
+  }
+
+  /* ── Polish: table stripe ── */
+  .data-table tbody tr:nth-child(even) td { background: rgba(255,255,255,0.012); }
+  .data-table tbody tr:hover td { background: rgba(88,166,255,0.06); }
+  .data-table th {
+    background: var(--bg);
+    position: sticky; top: 0;
+    border-bottom-width: 2px;
+  }
+
+  /* ── Polish: stat value subtle emphasis ── */
+  .stat-value {
+    letter-spacing: -0.02em;
+    transition: color 0.2s ease;
+  }
+  .stat-card:hover .stat-value { color: #fff; }
+
+  /* ── Polish: nav tree refinements ── */
+  .nav-item { border-radius: 0 6px 6px 0; margin-right: 6px; }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(31,111,235,0.15), rgba(31,111,235,0.04));
+  }
+
+  /* ── Polish: original_info box ── */
+  .orig-info-box {
+    background: linear-gradient(135deg, var(--bg), var(--bg2));
+    border-left: 2px solid var(--border2);
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+  .orig-info-box:hover { border-left-color: var(--accent); color: var(--text2); }
+
+  /* ── Polish: breadcrumb links ── */
+  .breadcrumb span[onclick] {
+    transition: color 0.15s ease;
+  }
+  .breadcrumb span[onclick]:hover { color: var(--accent) !important; }
+
+  /* ── Polish: flame chart ── */
+  #flame-canvas {
+    border-radius: var(--radius);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    transition: border-color 0.2s ease;
+  }
+  #flame-canvas:hover { border-color: var(--border2); }
+
+  /* ── Polish: sidebar header ── */
+  .sidebar-header {
+    background: linear-gradient(180deg, rgba(31,111,235,0.06), transparent);
+  }
+
+  /* ── Polish: stat bar animation ── */
+  .stat-bar-fill {
+    background-image: linear-gradient(90deg, transparent, rgba(255,255,255,0.1));
+  }
+
+  /* ── Polish: page header gradient ── */
+  .page-header {
+    background: linear-gradient(180deg, var(--bg2), rgba(22,27,34,0.85));
+    backdrop-filter: blur(8px);
+  }
+
+  /* ── Polish: btn-export visibility ── */
+  .btn-export {
+    opacity: 0.7; transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  }
+  .btn-export:hover { opacity: 1; }
+
+  /* ── Polish: module type indicator dots ── */
+  .mod-arena-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); display: inline-block; box-shadow: 0 0 6px rgba(210,153,34,0.4); }
+  .mod-pt-dot   { width: 8px; height: 8px; border-radius: 2px; background: var(--cyan); display: inline-block; box-shadow: 0 0 6px rgba(57,197,207,0.4); }
 </style>
 </head>
 <body>
@@ -454,9 +544,9 @@ var i18nStrings = {
     'stat.hotOfTotal': '{pct}% of total',
     'stat.activeAnonCache': '活跃匿名+活跃缓存', 'stat.inactiveAnonCache': '非活跃匿名+非活跃缓存',
     'flame.title': '内存火焰图（层级结构）',
-    'flame.subtitle': '网元 → 节点 → POD → 容器 → 进程 内存占用火焰图',
+    'flame.subtitle': '网元 → 节点 → POD → 容器 → 进程 → 模块 内存占用火焰图',
     'flame.l0': 'L0 网元', 'flame.l1': 'L1 节点', 'flame.l2': 'L2 POD',
-    'flame.l3': 'L3 容器', 'flame.l4': 'L4 进程',
+    'flame.l3': 'L3 容器', 'flame.l4': 'L4 进程', 'flame.l5': 'L5 模块',
     'chart.neBar': '各网元内存使用', 'chart.hotCold': '全局冷热内存比例',
     'chart.nodeBar': '节点内存使用对比', 'chart.nodeHC': '冷热内存比例',
     'chart.hotColdPie': '冷热内存占比', 'chart.memClass': '内存分类明细',
@@ -497,8 +587,18 @@ var i18nStrings = {
     'units.neTypeMeta': '{type} · {n} 个节点',
     'units.podMeta': '命名空间: {ns} · {n} 个容器',
     'units.ctrMeta': '容器 · {n} 个进程',
-    'units.procMeta': 'PID: {pid} · 容器: {ctr}',
+    'units.procMeta': 'PID: {pid}',
+    'units.procMetaMod': 'PID: {pid} · {n} 个模块',
+    'units.modMeta': '模块',
     'breadcrumb.overview': '总览', 'badge.ne': '网元',
+    'table.modList': '模块列表（点击查看详情）', 'table.modName': '模块名称',
+    'table.modType': '类型', 'table.modProcesses': '进程数',
+    'section.arenaInfo': 'Arena 信息', 'section.ptInfo': 'PT 信息',
+    'label.systemBytes': 'System Bytes', 'label.inUseBytes': 'In Use Bytes',
+    'label.maxMmapRegions': 'Max Mmap Regions', 'label.maxMmapBytes': 'Max Mmap Bytes',
+    'label.ptNo': 'PT No.', 'label.ptName': 'PT Name',
+    'label.totalSize': 'Total Size', 'label.freeSize': 'Free Size',
+    'label.usedPercent': 'Used %',
     'export.csv': '导出 CSV', 'export.excel': '导出 Excel'
   },
   en: {
@@ -526,9 +626,9 @@ var i18nStrings = {
     'stat.activeAnonCache': 'Active Anon + Active File',
     'stat.inactiveAnonCache': 'Inactive Anon + Inactive File',
     'flame.title': 'Memory Flame Graph (Hierarchy)',
-    'flame.subtitle': 'NE → Node → POD → Container → Process Memory Flame',
+    'flame.subtitle': 'NE → Node → POD → Container → Process → Module Memory Flame',
     'flame.l0': 'L0 NE', 'flame.l1': 'L1 Node', 'flame.l2': 'L2 POD',
-    'flame.l3': 'L3 Container', 'flame.l4': 'L4 Process',
+    'flame.l3': 'L3 Container', 'flame.l4': 'L4 Process', 'flame.l5': 'L5 Module',
     'chart.neBar': 'Memory Usage by NE', 'chart.hotCold': 'Global Hot/Cold Ratio',
     'chart.nodeBar': 'Node Memory Comparison', 'chart.nodeHC': 'Hot/Cold Ratio',
     'chart.hotColdPie': 'Hot/Cold Ratio', 'chart.memClass': 'Memory Breakdown',
@@ -570,8 +670,18 @@ var i18nStrings = {
     'units.neTypeMeta': '{type} · {n} nodes',
     'units.podMeta': 'Namespace: {ns} · {n} containers',
     'units.ctrMeta': 'Container · {n} processes',
-    'units.procMeta': 'PID: {pid} · Container: {ctr}',
+    'units.procMeta': 'PID: {pid}',
+    'units.procMetaMod': 'PID: {pid} · {n} modules',
+    'units.modMeta': 'Module',
     'breadcrumb.overview': 'Overview', 'badge.ne': 'NE',
+    'table.modList': 'Module List (click for details)', 'table.modName': 'Module Name',
+    'table.modType': 'Type', 'table.modProcesses': 'Processes',
+    'section.arenaInfo': 'Arena Info', 'section.ptInfo': 'PT Info',
+    'label.systemBytes': 'System Bytes', 'label.inUseBytes': 'In Use Bytes',
+    'label.maxMmapRegions': 'Max Mmap Regions', 'label.maxMmapBytes': 'Max Mmap Bytes',
+    'label.ptNo': 'PT No.', 'label.ptName': 'PT Name',
+    'label.totalSize': 'Total Size', 'label.freeSize': 'Free Size',
+    'label.usedPercent': 'Used %',
     'export.csv': 'Export CSV', 'export.excel': 'Export Excel'
   }
 };
@@ -713,15 +823,22 @@ function findNodeInNE(neId, nodeId) {
   var ne = findNE(neId);
   return ne ? ne.nodes.find(function(n) { return n.id === nodeId; }) : null;
 }
-function findEntityPath(neId, nodeId, podId, ctrId) {
+function findEntityPath(neId, nodeId, podId, ctrId, procId, modId) {
   var ne = findNE(neId);
   if (!ne) return null;
   var node = nodeId ? ne.nodes.find(function(n) { return n.id === nodeId; }) : null;
-  if (!node) return { ne: ne, node: null, pod: null, ctr: null };
+  if (!node) return { ne: ne, node: null, pod: null, ctr: null, proc: null, mod: null };
   var pod = podId ? node.pods.find(function(p) { return p.id === podId; }) : null;
-  if (!pod) return { ne: ne, node: node, pod: null, ctr: null };
+  if (!pod) return { ne: ne, node: node, pod: null, ctr: null, proc: null, mod: null };
   var ctr = ctrId ? pod.containers.find(function(c) { return c.id === ctrId; }) : null;
-  return { ne: ne, node: node, pod: pod, ctr: ctr || null };
+  if (!ctr) return { ne: ne, node: node, pod: pod, ctr: null, proc: null, mod: null };
+  var proc = procId && ctr.processes ? ctr.processes.find(function(p) { return p.id === procId; }) || null : null;
+  if (!proc) return { ne: ne, node: node, pod: pod, ctr: ctr, proc: null, mod: null };
+  var mod = null;
+  if (modId && proc.modules) {
+    mod = proc.modules.find(function(m) { return m.id === modId; }) || null;
+  }
+  return { ne: ne, node: node, pod: pod, ctr: ctr, proc: proc, mod: mod };
 }
 function renderNodePageById(neId) {
   var ne = findNE(neId);
@@ -739,11 +856,13 @@ function renderContainerPageById(neId, nodeId, podId, ctrId) {
   var r = findEntityPath(neId, nodeId, podId, ctrId);
   if (r && r.ctr) renderContainerPage(r.ne, r.node, r.pod, r.ctr);
 }
+function renderModulePageById(neId, nodeId, podId, ctrId, procId, modId) {
+  var r = findEntityPath(neId, nodeId, podId, ctrId, procId, modId);
+  if (r && r.mod) renderModulePage(r.ne, r.node, r.pod, r.ctr, r.proc, r.mod);
+}
 function renderProcessPageById(neId, nodeId, podId, ctrId, procId) {
-  var r = findEntityPath(neId, nodeId, podId, ctrId);
-  if (!r || !r.ctr) return;
-  var proc = r.ctr.processes.find(function(p) { return p.id === procId; });
-  if (proc) renderProcessPage(r.ne, r.node, r.pod, r.ctr, proc);
+  var r = findEntityPath(neId, nodeId, podId, ctrId, procId);
+  if (r && r.proc) renderProcessPage(r.ne, r.node, r.pod, r.ctr, r.proc);
 }
 
 // ── CSV Export ──
@@ -818,22 +937,39 @@ function buildNavTree() {
   neSection.textContent = t('nav.neSection');
   tree.appendChild(neSection);
 
+  var lvlDot = function(color, radius) {
+    return '<span style="width:7px;height:7px;border-radius:'+radius+';background:'+color+';display:inline-block;vertical-align:middle;margin-right:3px;flex-shrink:0;opacity:0.85"></span>';
+  };
+
   appData.network_elements.forEach(ne => {
-    const neResult = addNavItem(tree, 'ne-'+ne.id, 'node', '🗄 ' + ne.name, ne, 1, null, () => renderNodePage(ne), true);
+    const neResult = addNavItem(tree, 'ne-'+ne.id, 'node', lvlDot('var(--blue)','50%') + ne.name, ne, 1, null, () => renderNodePage(ne), true);
 
     ne.nodes.forEach(node => {
-      const nodeResult = addNavItem(neResult.childrenEl, 'node-'+node.id, 'node', '⬡ ' + node.name, node, 2, null, () => renderNodeDetail(ne, node), true);
+      const nodeResult = addNavItem(neResult.childrenEl, 'node-'+node.id, 'node', lvlDot('var(--green)','2px') + node.name, node, 2, null, () => renderNodeDetail(ne, node), true);
 
       node.pods.forEach(pod => {
-        const podResult = addNavItem(nodeResult.childrenEl, 'pod-'+pod.id, 'pod', '◈ ' + pod.name.substring(0, 18), pod, 3, null, () => renderPodPage(ne, node, pod), true);
+        const podResult = addNavItem(nodeResult.childrenEl, 'pod-'+pod.id, 'pod', lvlDot('var(--purple)','50%') + pod.name.substring(0, 18), pod, 3, null, () => renderPodPage(ne, node, pod), true);
 
         pod.containers.forEach(ctr => {
-          var ctrResult = addNavItem(podResult.childrenEl, 'ctr-'+ctr.id, 'container', '▣ ' + ctr.name, ctr, 4, null, function() { renderContainerPage(ne, node, pod, ctr); }, true);
-          // Lazy-load processes: only create nav DOM when container is expanded
+          var ctrResult = addNavItem(podResult.childrenEl, 'ctr-'+ctr.id, 'container', lvlDot('var(--teal)','2px') + ctr.name, ctr, 4, null, function() { renderContainerPage(ne, node, pod, ctr); }, true);
+
           if (ctr.processes && ctr.processes.length > 0) {
+            // Lazy-load processes under container
             makeLazyChildren(ctrResult, podResult.childrenEl, ctr, function(ctrEl) {
               ctr.processes.forEach(function(proc) {
-                addNavItem(ctrEl, 'proc-'+proc.id, 'process', '⬤ ' + proc.name, proc, 5, null, function() { renderProcessPage(ne, node, pod, ctr, proc); }, false);
+                var hasMods = proc.modules && proc.modules.length > 0;
+                var procResult = addNavItem(ctrEl, 'proc-'+proc.id, 'process', lvlDot('var(--cyan)','50%') + proc.name, proc, 5, null, function() { renderProcessPage(ne, node, pod, ctr, proc); }, hasMods);
+                if (hasMods) {
+                  // Lazy-load modules under process
+                  makeLazyChildren(procResult, ctrEl, proc, function(procEl) {
+                    proc.modules.forEach(function(mod) {
+                      var isA = mod.type === 'arena';
+                      var dotHtml = isA ? '<span style="width:7px;height:7px;border-radius:50%;background:var(--amber);display:inline-block;box-shadow:0 0 4px rgba(210,153,34,0.4);vertical-align:middle;margin-right:2px"></span>' : '<span style="width:7px;height:7px;border-radius:2px;background:var(--cyan);display:inline-block;box-shadow:0 0 4px rgba(57,197,207,0.4);vertical-align:middle;margin-right:2px"></span>';
+                      var label = isA ? 'Arena' : (mod.pt_name || 'PT-' + mod.pt_no);
+                      addNavItem(procEl, 'mod-'+mod.id, 'module', dotHtml + label, mod, 6, null, function() { renderModulePage(ne, node, pod, ctr, proc, mod); }, false);
+                    });
+                  });
+                }
               });
             });
           }
@@ -845,7 +981,7 @@ function buildNavTree() {
 
 function addNavItem(parent, id, pageKey, label, data, depth, iconHtml, renderFn, hasChildren) {
   var el = document.createElement('div');
-  el.className = 'nav-item' + (depth > 0 ? ' nav-indent-' + Math.min(depth, 4) : '');
+  el.className = 'nav-item' + (depth > 0 ? ' nav-indent-' + Math.min(depth, 6) : '');
   el.id = 'nav-' + id;
   el.dataset.page = pageKey;
 
@@ -960,7 +1096,7 @@ function renderNEOverview() {
       </div>
       <div class="chart-card">
         <div class="chart-title">${t('flame.subtitle')}</div>
-        <canvas id="flame-canvas" height="240" style="width:100%;cursor:pointer;"></canvas>
+        <canvas id="flame-canvas" height="320" style="width:100%;cursor:pointer;"></canvas>
         <div class="flame-legend" id="flame-legend"></div>
       </div>
     </div>
@@ -1153,7 +1289,7 @@ function drawFlameChart() {
   const dpr = window.devicePixelRatio || 1;
   const W = canvas.clientWidth || 800;
   canvas.width = W * dpr;
-  canvas.height = 290 * dpr;
+  canvas.height = 320 * dpr;
   ctx.scale(dpr, dpr);
 
   const ROW_H = 22, GAP = 1, PAD = 0;
@@ -1174,12 +1310,22 @@ function drawFlameChart() {
   // Pre-compute derived totals for nested levels
   var nodePodTotalCache = {};
   var podCtrTotalCache = {};
+  var procModTotalCache = {};
   nes.forEach(function(ne) {
     ne.nodes.forEach(function(node) {
       var npt = sum(node.pods, function(p) { return p.working_set_bytes / 1024; }) || node.mem_used_kb;
       nodePodTotalCache[node.id] = npt;
       node.pods.forEach(function(pod) {
         podCtrTotalCache[pod.id] = sum(pod.containers, function(c) { return c.usage_bytes; }) || 1;
+        pod.containers.forEach(function(ctr) {
+          ctr.processes.forEach(function(proc) {
+            if (proc.modules && proc.modules.length > 0) {
+              procModTotalCache[proc.id] = sum(proc.modules, function(m) {
+                return m.type === 'arena' ? (m.in_use_bytes || 1) : ((m.total_size || 1) * (m.used_percent || 50) / 100);
+              }) || 1;
+            }
+          });
+        });
       });
     });
   });
@@ -1301,8 +1447,8 @@ function drawFlameChart() {
         const podCtrTotal = podCtrTotalCache[pod.id];
         pod.containers.forEach((ctr, ci) => {
           const ctrShare = podShare * ctr.usage_bytes / podCtrTotal;
-          const procTotal = sum(ctr.processes, p => p.vm_rss_kb * 1024) || 1;
-          ctr.processes.forEach((proc, i) => {
+          const procTotal = sum(ctr.processes, function(p) { return p.vm_rss_kb * 1024; }) || 1;
+          ctr.processes.forEach(function(proc, i) {
             const frac = procTotal > 0 ? ctrShare * (proc.vm_rss_kb * 1024) / procTotal : 0;
             const bw = frac * (W - PAD*2);
             if (bw < 1.5) { xOff += frac; return; }
@@ -1313,9 +1459,9 @@ function drawFlameChart() {
               ctx.fillStyle = 'rgba(255,255,255,0.88)';
               ctx.font = '500 9px -apple-system,sans-serif';
               ctx.textBaseline = 'middle';
-              const label = proc.name;
-              const tw = ctx.measureText(label).width;
-              if (tw + 8 < bw) ctx.fillText(label, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+              var plabel = proc.name;
+              var tw = ctx.measureText(plabel).width;
+              if (tw + 8 < bw) ctx.fillText(plabel, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
             }
             hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr, proc}, type: 'process' });
             xOff += frac;
@@ -1324,9 +1470,54 @@ function drawFlameChart() {
       });
     });
   });
+  y += ROW_H;
+
+  // Level 5: Modules — proportional within parent process
+  xOff = 0;
+  nes.forEach((ne, ni) => {
+    ne.nodes.forEach((node, nii) => {
+      const nodeShare = node.mem_used_kb / grandTotal;
+      const nodePodTotal = nodePodTotalCache[node.id];
+      node.pods.forEach((pod, pi) => {
+        const podShare = nodeShare * (pod.working_set_bytes / 1024) / nodePodTotal;
+        const podCtrTotal = podCtrTotalCache[pod.id];
+        pod.containers.forEach((ctr, ci) => {
+          const ctrShare = podShare * ctr.usage_bytes / podCtrTotal;
+          const procTotal = sum(ctr.processes, function(p) { return p.vm_rss_kb * 1024; }) || 1;
+          ctr.processes.forEach(function(proc, pi2) {
+            const procShare = ctrShare * (proc.vm_rss_kb * 1024) / procTotal;
+            if (proc.modules && proc.modules.length > 0) {
+              const modTotal = procModTotalCache[proc.id] || 1;
+              proc.modules.forEach(function(mod, i) {
+                const modSize = mod.type === 'arena' ? (mod.in_use_bytes || 0) : ((mod.total_size || 0) * (mod.used_percent || 50) / 100);
+                const frac = procShare * modSize / modTotal;
+                const bw = frac * (W - PAD*2);
+                if (bw < 1.0) { xOff += frac; return; }
+                const pal = palette[(ni * 9 + nii * 5 + pi * 3 + ci * 2 + pi2 + i) % palette.length];
+                ctx.fillStyle = mod.type === 'arena' ? adjustBrightness(pal[1], -10) : adjustBrightness(pal[0], -30);
+                ctx.fillRect(PAD + xOff*(W-PAD*2), y, Math.max(bw - GAP, 0.5), ROW_H - GAP);
+                if (bw > 50) {
+                  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+                  ctx.font = '500 9px -apple-system,sans-serif';
+                  ctx.textBaseline = 'middle';
+                  var mlabel = mod.type === 'arena' ? 'Arena' : (mod.pt_name || 'PT-' + mod.pt_no);
+                  var tw = ctx.measureText(mlabel).width;
+                  if (tw + 8 < bw) ctx.fillText(mlabel, PAD + xOff*(W-PAD*2) + 4, y + (ROW_H-GAP)/2);
+                }
+                hitmap.push({ x1: PAD + xOff*(W-PAD*2), y1: y, x2: PAD + xOff*(W-PAD*2) + bw - GAP, y2: y + ROW_H - GAP, item: {ne, node, pod, ctr, proc, mod}, type: 'module' });
+                xOff += frac;
+              });
+            } else {
+              xOff += procShare;
+            }
+          });
+        });
+      });
+    });
+  });
 
   // Row labels
-  const labels = [t('flame.l0'), t('flame.l1'), t('flame.l2'), t('flame.l3'), t('flame.l4')];
+  const labels = [t('flame.l0'), t('flame.l1'), t('flame.l2'), t('flame.l3'), t('flame.l4'), t('flame.l5')];
   const flameLegend = document.getElementById('flame-legend');
   if (flameLegend) {
     flameLegend.innerHTML = labels.map((l, i) => {
@@ -1354,6 +1545,9 @@ function drawFlameChart() {
         } else if (h.type === 'container') {
           renderContainerPage(h.item.ne, h.item.node, h.item.pod, h.item.ctr);
           document.getElementById('nav-ctr-'+h.item.ctr.id)?.click();
+        } else if (h.type === 'module') {
+          renderModulePage(h.item.ne, h.item.node, h.item.pod, h.item.ctr, h.item.proc, h.item.mod);
+          document.getElementById('nav-mod-'+h.item.mod.id)?.click();
         } else if (h.type === 'process') {
           renderProcessPage(h.item.ne, h.item.node, h.item.pod, h.item.ctr, h.item.proc);
           document.getElementById('nav-proc-'+h.item.proc.id)?.click();
@@ -1869,6 +2063,29 @@ function renderContainerPage(ne, node, pod, ctr) {
   const hot = ctr.active_anon_bytes + ctr.active_file_bytes;
   const cold = ctr.inactive_anon_bytes + ctr.inactive_file_bytes;
   const up = pct(ctr.usage_bytes, ctr.limits_memory_bytes);
+  const procCount = ctr.processes ? ctr.processes.length : 0;
+  const metaText = t('units.ctrMeta', {n: procCount});
+
+  var procTableHtml = '';
+  if (procCount > 0) {
+    procTableHtml = `
+      <div class="section">
+        <div class="section-title">
+          ${t('table.procList')}
+          <button class="btn-export btn-export-procs" style="display:none">${t('export.csv')}</button>
+        </div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>PID</th><th>${t('table.procName')}</th>
+              <th style="text-align:right">${t('table.vmRss')}</th><th style="text-align:right">${t('table.vmHwm')}</th>
+              <th style="text-align:right">${t('table.vmPss')}</th><th style="text-align:right">${t('table.vmSwap')}</th>
+            </tr></thead>
+            <tbody id="proc-list-body"></tbody>
+          </table>
+        </div>
+      </div>`;
+  }
 
   page.innerHTML = `
     <div class="page-header">
@@ -1881,11 +2098,10 @@ function renderContainerPage(ne, node, pod, ctr) {
           <span>${ctr.name}</span>
         </div>
         <div class="page-title">${ctr.name}</div>
-        <div class="page-meta">容器 · ${ctr.processes.length} 个进程</div>
+        <div class="page-meta">${metaText}</div>
       </div>
     </div>
     <div class="content">
-      <!-- 配额 -->
       <div class="section-title" style="margin-bottom:12px;">配额限制</div>
       <div class="stat-grid stat-grid-2" style="margin-bottom:20px;">
         <div class="stat-card">
@@ -1898,7 +2114,6 @@ function renderContainerPage(ne, node, pod, ctr) {
         </div>
       </div>
 
-      <!-- 实时指标 -->
       <div class="section-title" style="margin-bottom:12px;">实时占用指标</div>
       <div class="stat-grid stat-grid-3" style="margin-bottom:20px;">
         <div class="stat-card">
@@ -1917,7 +2132,6 @@ function renderContainerPage(ne, node, pod, ctr) {
         </div>
       </div>
 
-      <!-- 冷热 -->
       <div class="section-title" style="margin-bottom:12px;">容器冷热内存</div>
       <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
         <div class="chart-card">
@@ -1969,23 +2183,7 @@ function renderContainerPage(ne, node, pod, ctr) {
         </div>
       </div>
 
-      <!-- Process list -->
-      <div class="section">
-        <div class="section-title">
-          进程列表（点击查看详情）
-          <button class="btn-export btn-export-procs" style="display:none">${t('export.csv')}</button>
-        </div>
-        <div class="chart-card" style="padding:0;">
-          <table class="data-table">
-            <thead><tr>
-              <th>PID</th><th>进程名</th>
-              <th style="text-align:right">VmRSS (KB)</th><th style="text-align:right">VmHWM (KB)</th>
-              <th style="text-align:right">VmPSS (KB)</th><th style="text-align:right">VmSwap (KB)</th>
-            </tr></thead>
-            <tbody id="proc-list-body"></tbody>
-          </table>
-        </div>
-      </div>
+      ${procTableHtml}
       ${renderOrigInfo(ctr)}
     </div>
   `;
@@ -2002,36 +2200,127 @@ function renderContainerPage(ne, node, pod, ctr) {
     }
   }, 50);
 
-  const tbody = document.getElementById('proc-list-body');
-  ctr.processes.forEach(proc => {
-    const tr = document.createElement('tr');
-    tr.style.cursor = 'pointer';
-    tr.onclick = () => { renderProcessPage(ne, node, pod, ctr, proc); document.getElementById('nav-proc-'+proc.id)?.click(); };
-    tr.innerHTML = `
-      <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:var(--cyan)">${proc.pid}</code></td>
-      <td class="name">${proc.name}</td>
-      <td class="num">${fmtKB(proc.vm_rss_kb)}</td>
-      <td class="num">${fmtKB(proc.vm_hwm_kb)}</td>
-      <td class="num">${fmtKB(proc.vm_pss_kb)}</td>
-      <td class="num" style="color:${proc.vm_swap_kb > 0 ? 'var(--amber)':'var(--text3)'}">${fmtKB(proc.vm_swap_kb)}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  if (procCount > 0) {
+    var procTbody = document.getElementById('proc-list-body');
+    ctr.processes.forEach(function(proc) {
+      var tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.onclick = function() { renderProcessPage(ne, node, pod, ctr, proc); document.getElementById('nav-proc-'+proc.id)?.click(); };
+      tr.innerHTML = `
+        <td><code style="font-family:var(--font-mono);font-size:11px;background:var(--bg4);padding:2px 6px;border-radius:4px;color:var(--cyan)">${proc.pid}</code></td>
+        <td class="name">${proc.name}</td>
+        <td class="num">${fmtKB(proc.vm_rss_kb)}</td>
+        <td class="num">${fmtKB(proc.vm_hwm_kb)}</td>
+        <td class="num">${fmtKB(proc.vm_pss_kb)}</td>
+        <td class="num" style="color:${proc.vm_swap_kb > 0 ? 'var(--amber)':'var(--text3)'}">${fmtKB(proc.vm_swap_kb)}</td>
+      `;
+      procTbody.appendChild(tr);
+    });
+    setTimeout(function() {
+      var exportBtn = document.getElementById('page-container').querySelector('.btn-export-procs');
+      if (exportBtn) {
+        exportBtn.style.display = '';
+        exportBtn.onclick = function() {
+          var headers = ['PID', t('table.procName'), 'VmRSS (KB)', 'VmHWM (KB)', 'VmPSS (KB)', 'VmSwap (KB)'];
+          var rows = ctr.processes.map(function(p) {
+            return [p.pid, p.name, p.vm_rss_kb, p.vm_hwm_kb, p.vm_pss_kb, p.vm_swap_kb];
+          });
+          exportToCSV('processes_' + ctr.name.replace(/[^a-zA-Z0-9_-]/g,'_') + '.csv', headers, rows);
+        };
+      }
+    }, 10);
+  }
+}
 
-  // Wire export button
-  setTimeout(function() {
-    var exportBtn = document.getElementById('page-container').querySelector('.btn-export-procs');
-    if (exportBtn) {
-      exportBtn.style.display = '';
-      exportBtn.onclick = function() {
-        var headers = ['PID', '进程名', 'VmRSS (KB)', 'VmHWM (KB)', 'VmPSS (KB)', 'VmSwap (KB)'];
-        var rows = ctr.processes.map(function(p) {
-          return [p.pid, p.name, p.vm_rss_kb, p.vm_hwm_kb, p.vm_pss_kb, p.vm_swap_kb];
-        });
-        exportToCSV('processes_' + ctr.name.replace(/[^a-zA-Z0-9_-]/g,'_') + '.csv', headers, rows);
-      };
-    }
-  }, 10);
+// ── Module Page ──
+function renderModulePage(ne, node, pod, ctr, proc, mod) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  var page = document.getElementById('page-module');
+  if (!page) {
+    page = document.createElement('div');
+    page.className = 'page';
+    page.id = 'page-module';
+    document.querySelector('.main').appendChild(page);
+  }
+  page.classList.add('active');
+
+  var isArena = mod.type === 'arena';
+
+  var detailHtml = '';
+  if (isArena) {
+    detailHtml = `
+      <div class="section-title" style="margin-bottom:12px;">${t('section.arenaInfo')}</div>
+      <div class="stat-grid stat-grid-2" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label">${t('label.systemBytes')}</div>
+          <div class="stat-value">${fmt(mod.system_bytes || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.inUseBytes')}</div>
+          <div class="stat-value c-amber">${fmt(mod.in_use_bytes || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.maxMmapRegions')}</div>
+          <div class="stat-value">${mod.max_mmap_regions || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.maxMmapBytes')}</div>
+          <div class="stat-value">${fmt(mod.max_mmap_bytes || 0)}</div>
+        </div>
+      </div>`;
+  } else {
+    var up = mod.used_percent || 0;
+    detailHtml = `
+      <div class="section-title" style="margin-bottom:12px;">${t('section.ptInfo')}</div>
+      <div class="stat-grid stat-grid-2" style="margin-bottom:20px;">
+        <div class="stat-card">
+          <div class="stat-label">${t('label.ptNo')}</div>
+          <div class="stat-value">${mod.pt_no || 0}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.ptName')}</div>
+          <div class="stat-value" style="font-size:14px;">${mod.pt_name || 'PT-' + mod.pt_no}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.totalSize')}</div>
+          <div class="stat-value">${fmt(mod.total_size || 0)}</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">${t('label.freeSize')}</div>
+          <div class="stat-value c-green">${fmt(mod.free_size || 0)}</div>
+        </div>
+        <div class="stat-card" style="grid-column:1/-1">
+          <div class="stat-label">${t('label.usedPercent')}</div>
+          <div class="stat-value" style="color:${barColor(up)}">${up}%</div>
+          <div class="stat-bar"><div class="stat-bar-fill" style="width:${Math.min(up,100)}%;background:${barColor(up)}"></div></div>
+        </div>
+      </div>`;
+  }
+
+  var modLabel = isArena ? 'Arena' : (mod.pt_name || 'PT-' + mod.pt_no);
+  var modDotClass = isArena ? 'mod-arena-dot' : 'mod-pt-dot';
+
+  page.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">${t('breadcrumb.overview')}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePageById('${ne.id}')">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetailById('${ne.id}','${node.id}')">${node.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderPodPageById('${ne.id}','${node.id}','${pod.id}')">${pod.name.substring(0,20)}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderContainerPageById('${ne.id}','${node.id}','${pod.id}','${ctr.id}')">${ctr.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderProcessPageById('${ne.id}','${node.id}','${pod.id}','${ctr.id}','${proc.id}')">${proc.name}</span><span class="sep">›</span>
+          <span><span class="${modDotClass}" style="margin-right:5px;vertical-align:middle"></span>${modLabel}</span>
+        </div>
+        <div class="page-title"><span class="${modDotClass}" style="margin-right:7px;vertical-align:middle"></span>${modLabel}</div>
+        <div class="page-meta">${t('units.modMeta')}</div>
+      </div>
+    </div>
+    <div class="content">
+      ${detailHtml}
+      ${renderOrigInfo(mod)}
+    </div>
+  `;
 }
 
 // ── Process Page ──
@@ -2041,33 +2330,79 @@ function renderProcessPage(ne, node, pod, ctr, proc) {
   page.classList.add('active');
 
   const metrics = [
-    { key: 'VmRSS', val: fmtKB(proc.vm_rss_kb), raw: proc.vm_rss_kb, desc: '进程当前物理内存占用', color: 'var(--blue)' },
-    { key: 'VmHWM', val: fmtKB(proc.vm_hwm_kb), raw: proc.vm_hwm_kb, desc: '进程内存峰值 (High Water Mark)', color: 'var(--purple)' },
-    { key: 'RssAnon', val: fmtKB(proc.rss_anon_kb), raw: proc.rss_anon_kb, desc: '进程私有匿名内存', color: 'var(--amber)' },
-    { key: 'RssFile', val: fmtKB(proc.rss_file_kb), raw: proc.rss_file_kb, desc: '进程文件映射内存', color: 'var(--green)' },
-    { key: 'RssShmem', val: fmtKB(proc.rss_shmem_kb), raw: proc.rss_shmem_kb, desc: '共享内存开销', color: 'var(--cyan)' },
-    { key: 'VmPSS', val: fmtKB(proc.vm_pss_kb), raw: proc.vm_pss_kb, desc: '均分共享后精准内存 (Proportional)', color: 'var(--teal)' },
-    { key: 'VmUSS', val: fmtKB(proc.vm_uss_kb), raw: proc.vm_uss_kb, desc: '进程纯私有内存 (Unique)', color: 'var(--hot)' },
-    { key: 'VmSwap', val: fmtKB(proc.vm_swap_kb), raw: proc.vm_swap_kb, desc: '进程交换分区使用', color: proc.vm_swap_kb > 0 ? 'var(--red)' : 'var(--text3)' },
+    { key: 'VmRSS', val: fmtKB(proc.vm_rss_kb), raw: proc.vm_rss_kb, desc: t('desc.vmRss'), color: 'var(--blue)' },
+    { key: 'VmHWM', val: fmtKB(proc.vm_hwm_kb), raw: proc.vm_hwm_kb, desc: t('desc.vmHwm'), color: 'var(--purple)' },
+    { key: 'RssAnon', val: fmtKB(proc.rss_anon_kb), raw: proc.rss_anon_kb, desc: t('desc.rssAnon'), color: 'var(--amber)' },
+    { key: 'RssFile', val: fmtKB(proc.rss_file_kb), raw: proc.rss_file_kb, desc: t('desc.rssFile'), color: 'var(--green)' },
+    { key: 'RssShmem', val: fmtKB(proc.rss_shmem_kb), raw: proc.rss_shmem_kb, desc: t('desc.rssShmem'), color: 'var(--cyan)' },
+    { key: 'VmPSS', val: fmtKB(proc.vm_pss_kb), raw: proc.vm_pss_kb, desc: t('desc.vmPss'), color: 'var(--teal)' },
+    { key: 'VmUSS', val: fmtKB(proc.vm_uss_kb), raw: proc.vm_uss_kb, desc: t('desc.vmUss'), color: 'var(--hot)' },
+    { key: 'VmSwap', val: fmtKB(proc.vm_swap_kb), raw: proc.vm_swap_kb, desc: t('desc.vmSwap'), color: proc.vm_swap_kb > 0 ? 'var(--red)' : 'var(--text3)' },
   ];
 
   const maxVal = Math.max(...metrics.map(m => m.raw));
+
+  var hasMods = proc.modules && proc.modules.length > 0;
+  var modCount = hasMods ? proc.modules.length : 0;
+  var procMeta = hasMods ? t('units.procMetaMod', {pid: proc.pid, n: modCount}) : t('units.procMeta', {pid: proc.pid});
+
+  // Split modules by type
+  var arenaMods = hasMods ? proc.modules.filter(function(m) { return m.type === 'arena'; }) : [];
+  var ptMods = hasMods ? proc.modules.filter(function(m) { return m.type !== 'arena'; }) : [];
+
+  var arenaTableHtml = '';
+  if (arenaMods.length > 0) {
+    arenaTableHtml = `
+      <div class="section">
+        <div class="section-title">
+          ${t('section.arenaInfo')}
+          <button class="btn-export btn-export-arena" style="display:none">${t('export.csv')}</button>
+        </div>
+        <div class="chart-card" style="padding:0;">
+          <table class="data-table">
+            <thead><tr>
+              <th>${t('table.modName')}</th>
+              <th style="text-align:right">${t('label.systemBytes')}</th>
+              <th style="text-align:right">${t('label.inUseBytes')}</th>
+              <th style="text-align:right">${t('label.maxMmapRegions')}</th>
+              <th style="text-align:right">${t('label.maxMmapBytes')}</th>
+            </tr></thead>
+            <tbody id="arena-list-body"></tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  var ptCardsHtml = '';
+  if (ptMods.length > 0) {
+    ptCardsHtml = `
+      <div class="section">
+        <div class="section-title">
+          ${t('section.ptInfo')}
+          <span style="font-weight:400;font-size:11px;color:var(--text3);margin-left:4px">${ptMods.length} PT</span>
+          <button class="btn-export btn-export-pt" style="display:none">${t('export.csv')}</button>
+        </div>
+        <div id="pt-cards-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+      </div>`;
+  }
 
   page.innerHTML = `
     <div class="page-header">
       <div>
         <div class="breadcrumb">
-          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">总览</span><span class="sep">›</span>
-          <span>…</span><span class="sep">›</span>
+          <span onclick="navTo(null,'ne-overview')" style="cursor:pointer;color:var(--accent)">${t('breadcrumb.overview')}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodePageById('${ne.id}')">${ne.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderNodeDetailById('${ne.id}','${node.id}')">${node.name}</span><span class="sep">›</span>
+          <span style="cursor:pointer;color:var(--accent)" onclick="renderPodPageById('${ne.id}','${node.id}','${pod.id}')">${pod.name.substring(0,20)}</span><span class="sep">›</span>
           <span style="cursor:pointer;color:var(--accent)" onclick="renderContainerPageById('${ne.id}','${node.id}','${pod.id}','${ctr.id}')">${ctr.name}</span><span class="sep">›</span>
           <span>${proc.name}</span>
         </div>
         <div class="page-title">${proc.name}</div>
-        <div class="page-meta">PID: ${proc.pid} · 容器: ${ctr.name}</div>
+        <div class="page-meta">${procMeta}</div>
       </div>
     </div>
     <div class="content">
-      <div class="section-title" style="margin-bottom:12px;">进程内存指标</div>
+      <div class="section-title" style="margin-bottom:12px;">${t('section.procMetrics')}</div>
 
       <div class="chart-grid chart-grid-2" style="margin-bottom:20px;">
         <div class="chart-card" style="padding:0;">
@@ -2084,14 +2419,13 @@ function renderProcessPage(ne, node, pod, ctr, proc) {
           </table>
         </div>
         <div class="chart-card">
-          <div class="chart-title">内存指标对比</div>
+          <div class="chart-title">${t('chart.memCompare')}</div>
           <div style="position:relative;height:260px;"><canvas id="proc-bar-chart" role="img" aria-label="进程内存指标柱状图"></canvas></div>
         </div>
       </div>
 
-      <!-- Memory breakdown -->
       <div class="chart-card">
-        <div class="chart-title">指标详细分布（按比例）</div>
+        <div class="chart-title">${t('chart.memDist')}</div>
         <div style="display:grid;gap:10px;margin-top:8px;">
           ${metrics.filter(m=>m.raw > 0).map(m => `
             <div>
@@ -2107,9 +2441,91 @@ function renderProcessPage(ne, node, pod, ctr, proc) {
           `).join('')}
         </div>
       </div>
+      ${arenaTableHtml}
+      ${ptCardsHtml}
       ${renderOrigInfo(proc)}
     </div>
   `;
+
+  // Populate Arena table
+  if (arenaMods.length > 0) {
+    var arenaTbody = document.getElementById('arena-list-body');
+    arenaMods.forEach(function(mod) {
+      var tr = document.createElement('tr');
+      tr.style.cursor = 'pointer';
+      tr.onclick = function() { renderModulePage(ne, node, pod, ctr, proc, mod); document.getElementById('nav-mod-'+mod.id)?.click(); };
+      tr.innerHTML = `
+        <td class="name"><span class="mod-arena-dot" style="margin-right:6px;vertical-align:middle"></span>Arena</td>
+        <td class="num">${fmt(mod.system_bytes || 0)}</td>
+        <td class="num" style="color:var(--amber)">${fmt(mod.in_use_bytes || 0)}</td>
+        <td class="num">${mod.max_mmap_regions || 0}</td>
+        <td class="num">${fmt(mod.max_mmap_bytes || 0)}</td>
+      `;
+      arenaTbody.appendChild(tr);
+    });
+    setTimeout(function() {
+      var exportBtn = document.getElementById('page-process').querySelector('.btn-export-arena');
+      if (exportBtn) {
+        exportBtn.style.display = '';
+        exportBtn.onclick = function() {
+          exportToCSV('arena_' + proc.name.replace(/[^a-zA-Z0-9_-]/g,'_') + '.csv',
+            [t('table.modName'), t('label.systemBytes'), t('label.inUseBytes'), t('label.maxMmapRegions'), t('label.maxMmapBytes')],
+            arenaMods.map(function(m) { return ['Arena', m.system_bytes||0, m.in_use_bytes||0, m.max_mmap_regions||0, m.max_mmap_bytes||0]; }));
+        };
+      }
+    }, 10);
+  }
+
+  // Populate PT cards
+  if (ptMods.length > 0) {
+    var ptContainer = document.getElementById('pt-cards-container');
+    ptMods.forEach(function(mod) {
+      var up = mod.used_percent || 0;
+      var barClr = barColor(up);
+      var total = mod.total_size || 0;
+      var free = mod.free_size || 0;
+      var used = total - free;
+      var card = document.createElement('div');
+      card.style.cssText = 'background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:12px 14px;cursor:pointer;transition:all 0.2s ease;box-shadow:0 1px 3px rgba(0,0,0,0.15)';
+      card.onmouseenter = function() { card.style.borderColor = 'var(--border2)'; card.style.boxShadow = '0 2px 10px rgba(0,0,0,0.3)'; };
+      card.onmouseleave = function() { card.style.borderColor = 'var(--border)'; card.style.boxShadow = '0 1px 3px rgba(0,0,0,0.15)'; };
+      card.onclick = function() { renderModulePage(ne, node, pod, ctr, proc, mod); document.getElementById('nav-mod-'+mod.id)?.click(); };
+
+      var pctVal = up >= 80 ? 'c-red' : up >= 60 ? 'c-amber' : 'c-green';
+      card.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="mod-pt-dot"></span>
+          <span style="font-weight:600;font-size:13px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${mod.pt_name || 'PT-' + mod.pt_no}</span>
+          <span style="font-size:10px;color:var(--text3);font-family:var(--font-mono)">#${mod.pt_no || 0}</span>
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">
+            <span style="font-size:11px;color:var(--text3)">${t('label.totalSize')}</span>
+            <span style="font-size:21px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:-0.02em">${fmt(total)}</span>
+          </div>
+          <div style="height:5px;background:var(--bg4);border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${up}%;background:${barClr};border-radius:3px;transition:width 0.6s ease"></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:4px;">
+            <span style="font-size:10px;color:var(--text3)">${t('label.usedPercent')} <span class="${pctVal}" style="font-family:var(--font-mono);font-weight:600">${up}%</span></span>
+            <span style="font-size:10px;color:var(--text3)">${t('label.freeSize')} <span style="color:var(--green);font-family:var(--font-mono);font-weight:500">${fmt(free)}</span></span>
+          </div>
+        </div>
+      `;
+      ptContainer.appendChild(card);
+    });
+    setTimeout(function() {
+      var exportBtn = document.getElementById('page-process').querySelector('.btn-export-pt');
+      if (exportBtn) {
+        exportBtn.style.display = '';
+        exportBtn.onclick = function() {
+          exportToCSV('pt_' + proc.name.replace(/[^a-zA-Z0-9_-]/g,'_') + '.csv',
+            [t('label.ptNo'), t('label.ptName'), t('label.totalSize'), t('label.freeSize'), t('label.usedPercent')],
+            ptMods.map(function(m) { return [m.pt_no||0, m.pt_name||('PT-'+m.pt_no), m.total_size||0, m.free_size||0, (m.used_percent||0)+'%']; }));
+        };
+      }
+    }, 10);
+  }
 
   destroyChart('proc-bar-chart');
   setTimeout(() => {
